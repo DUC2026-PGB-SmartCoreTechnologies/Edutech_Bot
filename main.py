@@ -9,8 +9,10 @@ def home():
     return "Bot is alive!"
 
 def run_flask():
-    # ដំណើរការ Web Server លើ Port 10000 របស់ Render
-    app.run(host='0.0.0.0', port=10000)
+    # កែត្រង់បន្ទាត់នេះ៖ ឱ្យវាទាញយក Port ពីប្រព័ន្ធ Render ដោយស្វ័យប្រវត្តិ បើគ្មានឱ្យយក 10000
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
+    
 
 def keep_alive():
     # បង្កើត Thread ថ្មីមួយដើម្បីឱ្យ Flask រត់ទន្ទឹមគ្នាជាមួយ Bot
