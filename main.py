@@ -1,3 +1,5 @@
+import os          
+import telebot
 from threading import Thread
 from flask import Flask
 
