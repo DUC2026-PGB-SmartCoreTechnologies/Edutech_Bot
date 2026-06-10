@@ -29,18 +29,29 @@ logger.setLevel(logging.DEBUG)
 #admin_handlers.register_admin_handlers(bot)    # 👑 ដំណើរការមុខងារ Admin ទាំងអស់
 admin_handlers.register_admin_teacher_handlers(bot, supabase)  # 👩‍🏫 ដំណើរការមុខងារគ្រូ
 # ========================================================
-# 🚀 មុខងារមេ /start (បង្ហាញមគ្គុទ្ទេសក៍ណែនាំគ្រប់តួនាទី)
+# ========================================================
+# 🎯 មុខងារផ្លូវកាត់ពិសេស៖ ដាក់ក្នុង main.py ផ្ទាល់ ធានា Admin ចុចលោតផ្ទាំងសិស្ស ១០០%
+# ========================================================
+@bot.message_handler(func=lambda message: message.text == "👁️ ផ្ទាំងសិស្ស (Student Panel)")
+def force_admin_enter_student_panel(message):
+    chat_id = message.chat.id
+    
+    # 🚀 ហៅផ្ទាំងប៊ូតុងសិស្សានុសិស្ស ចេញពី helpers.py មកបង្ហាញជូន Admin ភ្លាមៗ
+    bot.send_message(
+        chat_id, 
+        "🔄 **លោកអ្នកកំពុងស្ថិតនៅក្នុង៖ ផ្ទាំងបង្ហាញរបស់សិស្ស (Student View)**\n"
+        "--------------------------------------------------\n"
+        "💡 លោកគ្រូ/Admin អាចចុចតេស្តប៊ូតុងសិស្សានុសិស្សនៅខាងក្រោមបានសេរីបាទ។",
+        reply_markup=helpers.main_menu('km')
+    )
+# 🚀 មុខងារមេ /start (បង្ហាញមគ្គុទ្ទេសក៍ណែនាំគ្រប់តួនាទី - GROUP COMPATIBLE)
 # ========================================================
 @bot.message_handler(commands=['start'])
 def start_command(message):
     chat_id = message.chat.id
     user_id = message.from_user.id
     
-    if message.chat.type in ['group', 'supergroup']: return 
-
-    print(f"📩 [CONNECTED] មានអ្នកចុច /start ពី ID: {user_id}")
-    
-    # 📝 ផ្ទាំងអត្ថបទណែនាំដែលបងចង់បាន
+    # 📝 ផ្ទាំងអត្ថបទណែនាំ (Markdown Format)
     welcome_guide = (
         "🎯 **[ ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងសាលារៀន DUC ]**\n"
         "--------------------------------------------------\n"
@@ -48,10 +59,10 @@ def start_command(message):
         
         "👤 **១. សម្រាប់សិស្សានុសិស្ស (Student Guide)៖**\n"
         "👉 **របៀប Login៖** មិនបាច់វាយបញ្ជាអ្វីទាំងអស់! សូមវាយបញ្ចូលតែ **លេខកូដសម្ងាល់សិស្ស (Student ID)** របស់អ្នក រួចចុចផ្ញើមកកាន់ Bot ភ្លាមជាការស្រេច (ឧទាហរណ៍៖ `STU001`)។\n"
-        "👉 **របៀបចុះឈ្មោះថ្មី៖** ប្រសិនបើមិនទាន់មាន ID ទេ សូមវាយបញ្ជា `/register` ដើម្បីស្នើសុំចុះឈ្មោះ。\n\n"
+        "👉 **របៀបចុះឈ្មោះថ្មី៖** ប្រសិនបើមិនទាន់មាន ID ទេ សូមវាយបញ្ជា `/register` ដើម្បីស្នើសុំចុះឈ្មោះ។\n\n"
         
         "👑 **២. សម្រាប់ថ្នាក់ដឹកនាំ/រដ្ឋបាល (Admin Guide)៖**\n"
-        "👉 **របៀប Login៖** សូមវាយបញ្ជា `/login` តាមដោយដកឃ្លា និងលេខកូដសម្ងាត់មេរបស់សាលា。\n"
+        "👉 **របៀប Login៖** សូមវាយបញ្ជា `/login` តាមដោយដកឃ្លា និងលេខកូដសម្ងាត់មេរបស់សាលា។\n"
         "✍️ គំរូត្រឹមត្រូវ៖ `/login DUC_Admin@2026`\n\n"
         
         "👩‍🏫 **៣. សម្រាប់លោកគ្រូ-អ្នកគ្រូ (Teacher Guide)៖**\n"
@@ -61,61 +72,30 @@ def start_command(message):
         "🌐 *សូមជ្រើសរើសភាសាខាងក្រោម ដើម្បីចាប់ផ្ដើមដំណើរការ៖*"
     )
     
-    # 🌐 បង្កើត Inline Keyboard ភាសាដោយផ្ទាល់ក្នុងទីនេះ ការពារ Error AttributeError
+    # 🌐 បង្កើត Inline Keyboard ភាសាដាច់ដោយឡែក ការពារ Error AttributeError
     markup = types.InlineKeyboardMarkup()
     markup.add(
         types.InlineKeyboardButton("ភាសាខ្មែរ 🇰🇭", callback_data="lang_km"),
-        types.InlineKeyboardButton("English 🇬🇧", callback_data="lang_en")
-    )
-    
-    try:
-        supabase.table("users").upsert({"telegram_id": user_id, "status": "NEW", "language": "km"}, on_conflict="telegram_id").execute()
-    except Exception as e:
-        print(f"❌ Supabase Sync Error: {e}")
-
-    # 📤 ផ្ញើអត្ថបទព្រមទាំងប៊ូតុងដែលទើបបង្កើតអម្បាញ់មិញ
-    bot.send_message(chat_id, welcome_guide, parse_mode='Markdown', reply_markup=markup)
-    # ----------------------------------------------------
-    # ករណីទី ២៖ បើចុច /start ក្នុង Chat ផ្ទាល់ខ្លួន (Private Chat) 👉 បាញ់ចេញផ្ទាំង Guide ភ្លាម!
-    # ----------------------------------------------------
-    print(f"📩 [CONNECTED] មានអ្នកចុច /start ពី ID: {user_id}")
-    
-    # 📝 ផ្ទាំងអត្ថបទណែនាំដែលបងចង់បាន (Markdown Format)
-    welcome_guide = (
-        "🎯 **[ ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងសាលារៀន DUC ]**\n"
-        "--------------------------------------------------\n"
-        "🤖 ខ្ញុំជា Bot ជំនួយការផ្លូវការរបស់សាលារៀន។ សូមអានការណែនាំខាងក្រោមដើម្បីចូលប្រើប្រាស់គណនីរបស់អ្នក៖\n\n"
-        
-        "👤 **១. សម្រាប់សិស្សានុសិស្ស (Student Guide)៖**\n"
-        "👉 **របៀប Login៖** មិនបាច់វាយបញ្ជាអ្វីទាំងអស់! សូមវាយបញ្ចូលតែ **លេខកូដសម្ងាល់សិស្ស (Student ID)** របស់អ្នក រួចចុចផ្ញើមកកាន់ Bot ភ្លាមជាការស្រេច (ឧទាហរណ៍៖ `STU001`)临\n"
-        "👉 **របៀបចុះឈ្មោះថ្មី៖** ប្រសិនបើមិនទាន់មាន ID ទេ សូមវាយបញ្ជា `/register` ដើម្បីស្នើសុំចុះឈ្មោះ。\n\n"
-        
-        "👑 **២. សម្រាប់ថ្នាក់ដឹកនាំ/រដ្ឋបាល (Admin Guide)៖**\n"
-        "👉 **របៀប Login៖** សូមវាយបញ្ជា `/login` តាមដោយដកឃ្លា និងលេខកូដសម្ងាត់មេរបស់សាលា。\n"
-        "✍️ គំរូត្រឹមត្រូវ៖ `/login DUC_Admin@2026`\n\n"
-        
-        "👩‍🏫 **៣. សម្រាប់លោកគ្រូ-អ្នកគ្រូ (Teacher Guide)៖**\n"
-        "👉 **របៀប Login៖** សូមវាយបញ្ជា `/tlogin` តាមដោយដកឃ្លា និងលេខកូដសម្ងាត់គ្រូបង្រៀន។\n"
-        "✍️ គំរូត្រឹមត្រូវ៖ `/tlogin TCH_Password@2026`\n"
-        "--------------------------------------------------\n"
-        "🌐 *សូមជ្រើសរើសភាសាខាងក្រោម ដើម្បីចាប់ផ្ដើមដំណើរការ៖*"
-    )
+        types.InlineKeyboardButton("English 🇬🇧", callback_data="lang_en"))
     
     try:
         # 🔄 បង្កើត ឬអាប់ដេតគណនីបម្រុងទុកឱ្យគេក្នុង Supabase (ប្រើ on_conflict ការពារ Error ស្ទួន)
         supabase.table("users").upsert(
-            {"telegram_id": user_id, "status": "NEW", "language": "km"}, 
+            {"telegram_id": user_id, "status": "PENDING", "language": "km"}, 
             on_conflict="telegram_id"
         ).execute()
-        
-        # ផ្ញើសារណែនាំទៅកាន់អ្នកប្រើប្រាស់ ព្រមទាំងភ្ជាប់ប៊ូតុងរើសភាសាពី student_handlers
-        bot.send_message(chat_id, welcome_guide, parse_mode='Markdown', reply_markup=student_handlers.lang_keyboard())
-        print("✅ [SUCCESS] បានផ្ញើសារ Guide ទៅទូរស័ព្ទជោគជ័យ!")
+        print(f"📩 [CONNECTED] Sync ទិន្នន័យ ID: {user_id} ចូល Supabase រួចរាល់។")
         
     except Exception as e:
-        print(f"❌ [START ERROR]៖ {e}")
-        # បើដាច់ Network Supabase ក៏ឱ្យលោតផ្ញើសារធម្មតាការពារ Bot គាំង
-        bot.send_message(chat_id, welcome_guide, parse_mode='Markdown', reply_markup=student_handlers.lang_keyboard())
+        print(f"❌ [SUPABASE SYNC ERROR]៖ {e}")
+        # ទោះបីជាដាច់ណេត Supabase ក៏កូដនៅតែរត់ទៅផ្ញើសារដដែល មិនឱ្យគាំង Bot ទេ
+        
+    try:
+        # 📤 ផ្ញើអត្ថបទព្រមទាំងប៊ូតុងជ្រើសរើសភាសាទៅកាន់ Chat (ទោះក្នុងគ្រុបក៏លោតដែរ)
+        bot.send_message(chat_id, welcome_guide, parse_mode='Markdown', reply_markup=markup)
+        print(f"✅ [SUCCESS] បានបាញ់ផ្ញើសារ Guide ទៅកាន់ Chat ID: {chat_id} ជោគជ័យ!")
+    except Exception as e:
+        print(f"❌ [SEND MESSAGE ERROR]៖ {e}")
 
 # ========================================================
 # 📥 ផ្នែកទទួលឯកសារ UPLOAD កិច្ចការផ្ទះ (API Storage/Insert Mode)
