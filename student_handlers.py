@@ -4,6 +4,10 @@ from datetime import datetime
 import helpers
 import os
 
+from telebot import types
+
+
+
 def lang_keyboard():
     markup = types.InlineKeyboardMarkup()
     markup.add(
@@ -12,9 +16,9 @@ def lang_keyboard():
     )
     return markup
 
-def register_student_handlers(bot):
+def register_student_handlers(bot, supabase):
     # ========================================================
-    # 📝 មុខងារ៖ ចាប់ផ្ដើមការចុះឈ្មោះសិស្សថ្មី
+    # ១. មុខងារចុះឈ្មោះ (Register)
     # ========================================================
     @bot.message_handler(commands=['register'])
     def student_registration_start(message):
@@ -27,10 +31,8 @@ def register_student_handlers(bot):
             bot.send_message(chat_id, "ℹ️ **ប្អូនបានភ្ជាប់គណនីរួចរាល់ហើយ មិនបាច់ចុះឈ្មោះថ្មីទៀតទេបាទ!**")
             return
             
-        # ប្ដូរ Status គាត់ទៅជាវគ្គបំពេញព័ត៌មានចុះឈ្មោះ
         try:
             supabase.table("users").upsert({"telegram_id": user_id, "status": "REG_MODE", "language": "km"}, on_conflict="telegram_id").execute()
-            
             reg_msg = (
                 "📝 **[ ទម្រង់ស្នើសុំចុះឈ្មោះចូលរៀនអនឡាញ ]**\n"
                 "--------------------------------------------------\n"
@@ -41,9 +43,42 @@ def register_student_handlers(bot):
             bot.send_message(chat_id, reg_msg, parse_mode='Markdown')
         except Exception as e:
             bot.send_message(chat_id, f"⚠️ Error: {e}")
-        
 
     # ========================================================
+    # ២. មុខងារ Login ដោយវាយលេខកូដ (ឧ. DUC001)
+        # ២. មុខងារ Login ដោយវាយលេខកូដ (ឧ. DUC001)
+    @bot.message_handler(func=lambda message: message.text and message.text.upper().startswith("DUC"))
+    def fast_login(message):
+        student_id_input = message.text.strip().upper()
+        telegram_id = str(message.from_user.id)
+        chat_id = message.chat.id
+        
+        try:
+            # ស្វែងរកលេខកូដសិស្សក្នុងតារាង students
+            stu_res = supabase.table("students").select("*").eq("student_id", student_id_input).execute()
+            
+            if not stu_res.data:
+                bot.reply_to(message, "❌ **លេខកូដនេះមិនត្រឹមត្រូវទេ!** សូមពិនិត្យម្តងទៀត។")
+                return
+
+            # Update ទៅតារាង users
+            supabase.table("users").upsert({
+                "telegram_id": telegram_id,
+                "student_id": student_id_input,
+                "status": "APPROVED",
+                "role": "STUDENT"
+            }, on_conflict="telegram_id").execute()
+            
+            # 🚀 បង្ហាញសារជោគជ័យ និងហៅ Menu មកបង្ហាញ
+            bot.reply_to(
+                message, 
+                f"✅ **Login ជោគជ័យ!**\nស្វាគមន៍សិស្សកូដ `{student_id_input}`។",
+                parse_mode='Markdown',
+                reply_markup=helpers.main_menu('km') # ហៅ Menu មកបង្ហាញភ្លាមៗ
+            )
+            
+        except Exception as e:
+            bot.reply_to(message, f"❌ កំហុសបច្ចេកទេស៖ `{e}`")
     # 📝 មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង សុំច្បាប់
     # ========================================================
     @bot.message_handler(func=lambda m: m.text in ["📝 Submit Leave Request (សុំច្បាប់)", "Submit Leave Request (សុំច្បាប់)"])
@@ -101,43 +136,52 @@ def register_student_handlers(bot):
             user_role = user.get('role') if user else 'PARENT'
             
             # 🔒 ----------------------------------------------------
-            # 📚 មុខងារ៖ មើលកិច្ចការផ្ទះ (Homework Tracking - ទាញទាំង PDF និងរូបភាពមកបង្ហាញ)
-            # ----------------------------------------------------
-            if text in ["📚 Homework (កិច្ចការផ្ទះ)", "btn_hw"]:
+            # 📚 មុខងារ៖ មើលកិច្ចការផ្ទះ (Homework)
+            if text in ["📚 Homework (កិច្ចការផ្ទះ)", "btn_hw", "Homework (កិច្ចការផ្ទះ)"]:
                 stu_id = user.get('student_id') if user else None
                 
-                # 🟢 ករណីទី ១៖ សម្រាប់គណនី Admin ឬគណនីតេស្តដែលគ្មាន student_id
+                # 🟢 ករណីទី ១៖ សម្រាប់គណនី Admin ឬគណនីតេស្ត
                 if not stu_id or user_role == 'ADMIN':
                     hw_res = supabase.table("homework").select("*").order("id", desc=True).limit(5).execute()
-                    
                     if not hw_res.data:
-                        bot.send_message(chat_id, "ℹ️ **បច្ចុប្បន្នមិនទាន់មានទិន្នន័យកិច្ចការផ្ទះនៅក្នុងប្រព័ន្ធឡើយបាទ។**")
+                        bot.send_message(chat_id, "ℹ️ មិនមានទិន្នន័យកិច្ចការផ្ទះទេ។")
                         return
                     
-                    bot.send_message(chat_id, "📚 **[ ផ្ទាំងបង្ហាញកិច្ចការផ្ទះចុងក្រោយបង្អស់ (Admin/Test View) ]**\n--------------------------------------------------")
                     for hw in hw_res.data:
+                        cls = hw.get('class_level') or "មិនកំណត់"
                         hw_report = (
                             f"📋 **មុខវិជ្ជា៖ {hw.get('subject_name', 'ទូទៅ')}**\n"
-                            f"🏫 **សម្រាប់ថ្នាក់៖** `{hw.get('class_level', 'ទូទៅ')}`\n"
-                            f"📝 **ការណែនាំ៖** _{hw.get('description', 'គ្មានខ្លឹមសារពិពណ៌នា')}_\n"
-                            f"💯 **ពិន្ទុអតិបរមា៖** `{hw.get('max_points', 100)}`\n"
+                            f"🏫 **ថ្នាក់៖** `{cls}`\n"
+                            f"📝 **ការណែនាំ៖** _{hw.get('description', 'គ្មាន')}_\n"
+                            f"--------------------------------------------------"
+                        )
+                        bot.send_message(chat_id, hw_report, parse_mode='Markdown')
+                
+                # 🔵 ករណីទី ២៖ សម្រាប់សិស្ស (បង្ហាញតែមេរៀនចំថ្នាក់របស់គាត់)
+                else:
+                    stu_data = supabase.table("students").select("class_level, name").eq("student_id", stu_id).execute()
+                    if not stu_data.data:
+                        bot.send_message(chat_id, "⚠️ រកមិនឃើញថ្នាក់រៀនរបស់អ្នកទេ។")
+                        return
+                    
+                    class_lvl = stu_data.data[0]['class_level']
+                    stu_name = stu_data.data[0]['name']
+                    
+                    hw_res = supabase.table("homework").select("*").eq("class_level", class_lvl).order("id", desc=True).execute()
+                    if not hw_res.data:
+                        bot.send_message(chat_id, f"ℹ️ មិនមានកិច្ចការផ្ទះសម្រាប់ថ្នាក់ `{class_lvl}` ទេ។")
+                        return
+                    
+                    bot.send_message(chat_id, f"📚 **[ កិច្ចការផ្ទះសម្រាប់៖ {stu_name} ]**\n🏫 ថ្នាក់៖ `{class_lvl}`\n--------------------------------------------------")
+                    for hw in hw_res.data:
+                        hw_report = (
+                            f"📋 **មុខវិជ្ជា៖ {hw.get('subject_name')}**\n"
+                            f"📝 **ការណែនាំ៖** _{hw.get('description', 'គ្មាន')}_\n"
                             f"📅 **ឈប់ទទួល៖** `{hw.get('deadline_at', 'មិនកំណត់')}`\n"
                             f"--------------------------------------------------"
                         )
                         bot.send_message(chat_id, hw_report, parse_mode='Markdown')
-                        
-                        # 🚀 ទាញរូបភាព ឬ PDF មេរៀនមកបង្ហាញជូន (Admin View)
-                        file_url = hw.get('attachment_file')
-                        file_type = hw.get('attachment_type')
-                        if file_url and file_url != 'NULL':
-                            try:
-                                if file_type == 'photo':
-                                    bot.send_photo(chat_id, file_url, caption=f"🖼️ រូបភាពភ្ជាប់៖ កិច្ចការផ្ទះ {hw.get('subject_name')}")
-                                else:
-                                    bot.send_document(chat_id, file_url, caption=f"📄 ឯកសារភ្ជាប់ (PDF/Word)៖ កិច្ចការផ្ទះ {hw.get('subject_name')}")
-                            except Exception as file_err:
-                                print(f"⚠️ មិនអាចទាញឯកសារមេរៀនបាន៖ {file_err}")
-                    return
+                return
                 
                 # 🔵 ករណីទី ២៖ សម្រាប់គណនីសិស្ស/អាណាព្យាបាលពិតប្រាកដ (ទាញទិន្នន័យចំថ្នាក់រៀន)
                 stu_data = supabase.table("students").select("class_level, name").eq("student_id", stu_id).execute()
@@ -157,7 +201,15 @@ def register_student_handlers(bot):
                 
                 for hw in hw_res.data:
                     hw_id = hw['id']
-                    sub_res = supabase.table("student_submissions").select("*").eq("homework_id", hw_id).eq("student_id", stu_id).execute()
+                    # 🟢 ៤. Insert ទិន្នន័យចូលតារាង student_submissions
+                    sub_res = supabase.table("student_submissions").insert({
+                        "homework_id": latest_hw['id'],       # ត្រូវគ្នាជាមួយ Column ក្នុងតារាងបង
+                        "student_id": user['student_id'], 
+                        "class_level": student_class,         # ទាញបានពីតារាង students ជោគជ័យ
+                        "submitted_file": filename,
+                        "status": "Submitted"
+                        # "submitted_at" មិនចាំបាច់ដាក់ទេ បើ Supabase ដាក់ Default value ជា now()
+                    }).execute()
                     
                     status_emoji = "🔴"
                     status_text = "Not Started (មិនទាន់ធ្វើ)"
@@ -394,6 +446,7 @@ def register_student_handlers(bot):
     @bot.message_handler(content_types=['photo', 'document'])
     def handle_homework_upload(message):
         user_id = message.from_user.id
+        print("DEBUG: កំពុងដំណើរការ Upload homework...")
         chat_id = message.chat.id
         
         try:
