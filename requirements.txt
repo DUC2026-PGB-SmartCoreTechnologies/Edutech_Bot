@@ -1,3 +1,5 @@
 pyTelegramBotAPI
 flask
-pip freeze > requirements.txt
+supabase
+postgrest
+requests
