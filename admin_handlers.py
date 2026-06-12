@@ -178,9 +178,8 @@ def register_admin_teacher_handlers(bot, supabase):
 
     # ========================================================
     # 👩‍🏫 មុខងារទី ២៖ គ្រូ Login ផ្ទៀងផ្ទាត់ជាមួយ ID & Password
-    # =====================ចommands=['tlogin'])
-    def teacher_login_by_i===================================
-    @bot.message_handler(cd_and_password(message):
+    @bot.message_handler(commands=['tlogin'])
+    def teacher_login_by_id_and_password(message):
         chat_id = message.chat.id
         user_id = message.from_user.id
         text = message.text.strip()[7:].strip() # កាត់ពាក្យ /tlogin ចេញ
@@ -1013,7 +1012,9 @@ def register_admin_teacher_handlers(bot, supabase):
             print(f"❌ Add Major & Update Teacher Error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
             # 📅 មុខងារ៖ Admin វាយ /addnotice ដើម្បីបង្កើតសេចក្ដីប្រកាស និងផ្ញើទៅគ្រប់គ្នា (Broadcast)
-    # ========================================================
+            
+    # 📅 មុខងារ៖ Admin វាយ /addnotice បាញ់ទៅកាន់ STUDENT, TEACHER, ALL (ជួសជុលរឿងគ្មាន group_chat_id ក្នុងតារាងគ្រូ)
+    # ===================================================================================
     @bot.message_handler(commands=['addnotice'])
     def add_notice_command(message):
         chat_id = message.chat.id
@@ -1029,103 +1030,37 @@ def register_admin_teacher_handlers(bot, supabase):
             # 🔄 ២. កាត់យកអត្ថបទខាងក្រោយពាក្យ /addnotice
             input_text = message.text.strip()[10:].strip()
             
-            # ឆែកទម្រង់ (ត្រូវបំបែកដោយសញ្ញាក្បៀស , )
-            if not input_text or "," not in input_text:
+            if not input_text or input_text.count(",") < 2:
                 guide_msg = (
                     "⚠️ **ទម្រង់ខុសហើយ Admin!**\n"
-                    "សូមវាយ៖ `/addnotice ចំណងជើង, ខ្លឹមសារព័ត៌មាន`\n\n"
-                    "💡 *គំរូពិត៖* `/addnotice ការឈប់សម្រាក, សាលានឹងត្រូវផ្អាកការសិក្សារយៈពេល ០៣ថ្ងៃ ចាប់ពីថ្ងៃស្អែកតទៅ។`"
+                    "សូមវាយ៖ `/addnotice គោលដៅ, ចំណងជើង, ខ្លឹមសារព័ត៌មាន`\n\n"
+                    "💡 *ជម្រើសគោលដៅ (Target)៖*\n"
+                    "🔹 `STUDENT` ➡️ ផ្ញើទៅគ្រប់គ្រុបថ្នាក់ និងសិស្សទាំងអស់\n"
+                    "🔹 `TEACHER` ➡️ ផ្ញើទៅលោកគ្រូទាំងអស់ (Chat ផ្ទាល់ខ្លួន)\n"
+                    "🔹 `ALL`     ➡️ ផ្ញើទៅសាលាទាំងមូល (គ្រូ សិស្ស និងគ្រប់គ្រុបថ្នាក់ទាំងអស់)\n"
+                    "🔹 `ឈ្មោះថ្នាក់` ➡️ ផ្ញើចំគោលដៅថ្នាក់ជាក់លាក់ (ឧទាហរណ៍៖ `5_SPD`)\n\n"
+                    "💡 *គំរូ៖* `/addnotice ALL, ជូនដំណឹងរួម, ថ្ងៃស្អែកសាលាឈប់សម្រាក។`"
                 )
                 bot.reply_to(message, guide_msg, parse_mode='Markdown')
                 return
 
-            # បំបែកជា ២ ផ្នែក (ចំណងជើង និង ខ្លឹមសារ)
-            parts = input_text.split(",", 1) # ប្រើ ,1 ដើម្បីបំបែកតែសញ្ញាក្បៀសដំបូងគេបង្អស់ ការពារក្នុងខ្លឹមសារមានក្បៀសបន្ថែម
-            title = parts[0].strip()
-            content = parts[1].strip()
+            # បំបែកទិន្នន័យជា ៣ ផ្នែក
+            parts = input_text.split(",", 2)
+            target = parts[0].strip().upper()
+            title = parts[1].strip()
+            content = parts[2].strip()
 
-            bot.send_message(chat_id, "⏳ **កំពុងរក្សាទុក និងផ្ញើដំណឹងនេះទៅកាន់សិស្ស-គ្រូទាំងអស់...**")
+            bot.send_message(chat_id, f"⏳ **កំពុងរក្សាទុកចូលតារាង school_notices និងចាប់ផ្ដើមបាញ់ប្រកាសទៅ {target}...**")
 
-            # 🎯 ៣. Insert ចូលតារាង notices ក្នុង Supabase (សូមប្រាកដថាបងមានតារាង notices)
-            # បើបងមិនទាន់មានតារាង notices ទេ វានឹងលោត Error ប៉ុន្តែ Bot នៅតែផ្ញើសារទៅគ្រប់គ្នាដដែល
-            try:
-                supabase.table("notices").insert({
-                    "title": title,
-                    "content": content,
-                    "created_by": str(user_id)
-                }).execute()
-            except Exception as db_err:
-                print(f"⚠️ ទាក់ទងនឹងដាតាបេស notices (ប្រហែលមិនទាន់បង្កើតតារាង)៖ {db_err}")
+            # 🎯 ៣. រក្សាទុក (Insert) ចូលទៅក្នុងតារាង school_notices
+            supabase.table("school_notices").insert({
+                "title": title,
+                "content": content,
+                "notice_type": target, 
+                "created_by_telegram_id": int(user_id) 
+            }).execute()
 
-            # 📢 ៤. ទាញយកគ្រប់ telegram_id ទាំងអស់ពីតារាង users ដើម្បីធ្វើការ Broadcast
-            all_users = supabase.table("users").select("telegram_id").execute()
-            
-            # រៀបចំទម្រង់សារសម្រាប់ផ្ញើចេញ
-            broadcast_msg = (
-                "📢 **[ សេចក្ដីជូនដំណឹងថ្មីពីសាលា ]**\n"
-                f"📌 **ចំណងជើង៖** {title}\n"
-                f"----------------------------------------\n"
-                f"📝 **ខ្លឹមសារ៖** {content}\n\n"
-                "🔔 *សូមលោកគ្រូ-អ្នកគ្រូ និងសិស្សានុសិស្សទាំងអស់ជ្រាបជាព័ត៌មាន!*"
-            )
-
-            success_broadcast = 0
-            if all_users.data:
-                for u in all_users.data:
-                    u_tg_id = u.get('telegram_id')
-                    if u_tg_id:
-                        try:
-                            bot.send_message(u_tg_id, broadcast_msg, parse_mode='Markdown')
-                            success_broadcast += 1
-                        except Exception as send_err:
-                            # ការពារករណីអ្នកខ្លះ Block Bot ចោល
-                            print(f"⚠️ មិនអាចផ្ញើទៅកាន់ {u_tg_id} បានទេ៖ {send_err}")
-
-            # 🟢 ៥. រាយការណ៍ជូន Admin វិញ
-            bot.send_message(
-                chat_id, 
-                f"🟢 **ផ្សព្វផ្សាយសេចក្ដីប្រកាសជោគជ័យ!**\n\n"
-                f"📌 **ចំណងជើង៖** `{title}`\n"
-                f"📲 **បានបញ្ជូនទៅកាន់សមាជិក៖** `{success_broadcast}` នាក់នៅក្នុងប្រព័ន្ធ។",
-                parse_mode='Markdown'
-            )
-
-        except Exception as e:
-            print(f"❌ Add Notice Error: {e}")
-            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
-            # 📅 មុខងារ៖ Admin វាយ /addnotice ដើម្បីបាញ់ប្រកាសអូតូទៅកាន់ គ្រូ, សិស្ស, អាណាព្យាបាល និងគ្រុបថ្នាក់
-    # ========================================================
-    @bot.message_handler(commands=['addnotice'])
-    def add_notice_command(message):
-        chat_id = message.chat.id
-        user_id = message.from_user.id
-        
-        try:
-            # 🔒 ១. ឆែកសិទ្ធិ Admin
-            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
-            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
-                return
-
-            # 🔄 ២. កាត់យកអត្ថបទខាងក្រោយពាក្យ /addnotice
-            input_text = message.text.strip()[10:].strip()
-            if not input_text or "," not in input_text:
-                guide_msg = (
-                    "⚠️ **ទម្រង់ខុសហើយ Admin!**\n"
-                    "សូមវាយ៖ `/addnotice ចំណងជើង, ខ្លឹមសារព័ត៌មាន`\n\n"
-                    "💡 *គំរូ៖* `/addnotice ការប្រឡង, សូមត្រៀមខ្លួនប្រឡងនៅសប្ដាហ៍ក្រោយ។`"
-                )
-                bot.reply_to(message, guide_msg, parse_mode='Markdown')
-                return
-
-            # បំបែកជា ចំណងជើង និង ខ្លឹមសារ
-            parts = input_text.split(",", 1)
-            title = parts[0].strip()
-            content = parts[1].strip()
-
-            bot.send_message(chat_id, "⏳ **កំពុងប្រមូល ID ពីដាតាបេស និងចាប់ផ្ដើមបាញ់ប្រកាស...**")
-
-            # 🎯 ៣. រៀបចំទម្រង់សារសម្រាប់ផ្ញើចេញ
+            # 🎯 ៤. រៀបចំទម្រង់សារសម្រាប់ផ្ញើចេញដ៏ស្រស់ស្អាត
             broadcast_msg = (
                 "📢 **[ សេចក្ដីជូនដំណឹងថ្មីពីសាលា ]**\n"
                 f"📌 **ចំណងជើង៖** {title}\n"
@@ -1134,79 +1069,105 @@ def register_admin_teacher_handlers(bot, supabase):
                 "🔔 *សូមលោកគ្រូ-អ្នកគ្រូ សិស្សានុសិស្ស និងអាណាព្យាបាលទាំងអស់ជ្រាបជាព័ត៌មាន!*"
             )
 
-            # 🔎 ៤. ទាញយកទិន្នន័យពីតារាងគ្រូ (teachers) និងសិស្ស (students)
-            teachers_res = supabase.table("teachers").select("telegram_id").execute()
-            students_res = supabase.table("students").select("student_id", "parent_telegram_id", "group_chat_id").execute()
+            teacher_chats = set()
+            student_parent_chats = set()
+            group_chats = set()
 
-            # បង្កើត Set ដើម្បីប្រមូល ID ការពារកុំឱ្យផ្ញើជាន់គ្នា (ជួយឱ្យលឿនមិនស្ទះ)
-            teacher_chat_ids = set()
-            student_parent_ids = set()
-            group_chat_ids = set()
+            # 🔎 ៥. ទាញយកទិន្នន័យពីដាតាបេស (កែសម្រួលលុប group_chat_id ចេញពីតារាង teachers)
+            if target == "STUDENT":
+                students_res = supabase.table("students").select("student_id", "parent_telegram_id", "group_chat_id").execute()
+                if students_res.data:
+                    for s in students_res.data:
+                        if s.get('parent_telegram_id'): student_parent_chats.add(str(s['parent_telegram_id']))
+                        if s.get('student_id') and str(s['student_id']).isdigit(): student_parent_chats.add(str(s['student_id']))
+                        if s.get('group_chat_id') and str(s['group_chat_id']).strip() != "" and str(s['group_chat_id']).strip().lower() != "null":
+                            group_chats.add(str(s['group_chat_id']).strip())
+                            
+            elif target == "TEACHER":
+                # ទាញយកតែ telegram_id ធម្មតាប៉ុណ្ណោះ ការពារ Error គ្មាន column
+                teachers_res = supabase.table("teachers").select("telegram_id").execute()
+                if teachers_res.data:
+                    for t in teachers_res.data:
+                        if t.get('telegram_id'): teacher_chats.add(str(t['telegram_id']))
+                            
+            elif target == "ALL":
+                # ទាញយកគ្រូ (យកតែ telegram_id)
+                teachers_res = supabase.table("teachers").select("telegram_id").execute()
+                if teachers_res.data:
+                    for t in teachers_res.data:
+                        if t.get('telegram_id'): teacher_chats.add(str(t['telegram_id']))
+                # យកសិស្ស និងគ្រប់គ្រុបថ្នាក់        
+                students_res = supabase.table("students").select("student_id", "parent_telegram_id", "group_chat_id").execute()
+                if students_res.data:
+                    for s in students_res.data:
+                        if s.get('parent_telegram_id'): student_parent_chats.add(str(s['parent_telegram_id']))
+                        if s.get('student_id') and str(s['student_id']).isdigit(): student_parent_chats.add(str(s['student_id']))
+                        if s.get('group_chat_id') and str(s['group_chat_id']).strip() != "" and str(s['group_chat_id']).strip().lower() != "null":
+                            group_chats.add(str(s['group_chat_id']).strip())
+            else:
+                # 🎯 ករណីបាញ់ចំឈ្មោះថ្នាក់ជាក់លាក់ (ដូចជា 5_SPD)
+                students_res = supabase.table("students").select("student_id", "parent_telegram_id", "group_chat_id")\
+                    .or_(f"class_level.ilike.{target}, class_level.ilike.%{target}%").execute()
+                
+                if students_res.data:
+                    for s in students_res.data:
+                        if s.get('parent_telegram_id'): student_parent_chats.add(str(s['parent_telegram_id']))
+                        if s.get('student_id') and str(s['student_id']).isdigit(): student_parent_chats.add(str(s['student_id']))
+                        if s.get('group_chat_id') and str(s['group_chat_id']).strip() != "" and str(s['group_chat_id']).strip().lower() != "null":
+                            group_chats.add(str(s['group_chat_id']).strip())
+                
+                # ទាញយកគ្រូដែលបង្រៀនថ្នាក់នេះពីតារាង schedules
+                sched_res = supabase.table("schedules").select("teacher_id").or_(f"class_level.ilike.{target}, class_level.ilike.%{target}%").execute()
+                if sched_res.data:
+                    t_ids = [sch['teacher_id'] for sch in sched_res.data if sch.get('teacher_id')]
+                    if t_ids:
+                        teachers_res = supabase.table("teachers").select("telegram_id").in_("teacher_id", t_ids).execute()
+                        if teachers_res.data:
+                            for t in teachers_res.data:
+                                if t.get('telegram_id'): teacher_chats.add(str(t['telegram_id']))
 
-            # ប្រមូល ID របស់គ្រូ (ពីតារាង teachers)
-            if teachers_res.data:
-                for t in teachers_res.data:
-                    if t.get('telegram_id'):
-                        teacher_chat_ids.add(str(t['telegram_id']))
-
-            # ប្រមូល ID របស់សិស្ស/អាណាព្យាបាល និង ID គ្រុប (ពីតារាង students)
-            if students_res.data:
-                for s in students_res.data:
-                    # ចាប់យក ID សិស្សផ្ទាល់ខ្លួន (បើប្រើដាច់ដោយឡែក) ឬ parent_telegram_id តាមរូបថតបង
-                    if s.get('parent_telegram_id'):
-                        student_parent_ids.add(str(s['parent_telegram_id']))
-                    
-                    # ចាប់យក ID សិស្ស (ក្នុងករណី student_id ដើរតួជា telegram_id ដែរ)
-                    if s.get('student_id') and str(s['student_id']).isdigit():
-                        student_parent_ids.add(str(s['student_id']))
-
-                    # 🔗 ចាប់យក group_chat_id ពីតារាង students មកបាញ់ចូលគ្រុបថ្នាក់អូតូ
-                    if s.get('group_chat_id') and str(s['group_chat_id']).strip() != "":
-                        group_chat_ids.add(str(s['group_chat_id']).strip())
-
-            # 🚀 ៥. ចាប់ផ្ដើមរត់ Loop បាញ់ប្រកាសទៅកាន់គ្រប់ច្រក
+            # 🚀 ៦. ចាប់ផ្ដើមរត់ Loop បាញ់ប្រកាសទៅកាន់គ្រប់ច្រក (បម្លែងជា int ធានាភាពហ្មត់ចត់)
             count_teacher = 0
             count_student_parent = 0
             count_group = 0
 
-            # ក. បាញ់ទៅលោកគ្រូ-អ្នកគ្រូ (Private Chat)
-            for t_id in teacher_chat_ids:
+            for t_id in teacher_chats:
                 try:
-                    bot.send_message(t_id, broadcast_msg, parse_mode='Markdown')
+                    bot.send_message(int(t_id), broadcast_msg, parse_mode='Markdown')
                     count_teacher += 1
-                except Exception:
-                    pass
+                except Exception: pass
 
-            # ខ. បាញ់ទៅសិស្ស និងអាណាព្យាបាល (Private Chat)
-            for sp_id in student_parent_ids:
+            for sp_id in student_parent_chats:
                 try:
-                    bot.send_message(sp_id, broadcast_msg, parse_mode='Markdown')
+                    bot.send_message(int(sp_id), broadcast_msg, parse_mode='Markdown')
                     count_student_parent += 1
-                except Exception:
-                    pass
+                except Exception: pass
 
-            # គ. បាញ់ចូល Group ថ្នាក់រៀនអូតូ (Group Chat តាម group_chat_id ក្នុងតារាង students)
-            for g_id in group_chat_ids:
+            for g_id in group_chats:
                 try:
-                    bot.send_message(g_id, broadcast_msg, parse_mode='Markdown')
+                    bot.send_message(int(g_id), broadcast_msg, parse_mode='Markdown')
                     count_group += 1
-                except Exception:
-                    pass
+                except Exception as e_group:
+                    print(f"❌ Error sending to group {g_id}: {e_group}")
 
-            # 🟢 ៦. បូកសរុបរបាយការណ៍លម្អិតត្រឡប់ជូន Admin វិញ
+            # 🟢 ៧. បូកសរុបរបាយការណ៍លម្អិតត្រឡប់ជូន Admin វិញ
             report = (
-                "🟢 **ផ្សព្វផ្សាយសេចក្ដីប្រកាសរួចរាល់!**\n\n"
-                f"👤 **ផ្ញើទៅកាន់លោកគ្រូ-អ្នកគ្រូ៖** `{count_teacher}` នាក់\n"
-                f"👥 **ផ្ញើទៅសិស្ស/អាណាព្យាបាល (Private)៖** `{count_student_parent}` នាក់\n"
-                f"🏫 **បាញ់ចូល Group ថ្នាក់រៀនអូតូ៖** `{count_group}` គ្រុប\n\n"
-                "✨ រាល់ទិន្នន័យ ID និង Group Chat ID ត្រូវបានដំណើរការអូតូពី Database!"
+                "🟢 **រក្សាទុកដាតាបេស និងផ្សព្វផ្សាយជោគជ័យ!**\n\n"
+                f"🗄️ **ស្ថានភាព៖** រក្សាទុកចូលតារាង `school_notices` រួចរាល់\n"
+                f"🎯 **គោលដៅបាញ់សារ៖** `{target}`\n"
+                f"----------------------------------------\n"
+                f"👨‍🏫 **ផ្ញើទៅ Chat គ្រូផ្ទាល់ខ្លួន៖** `{count_teacher}` នាក់\n"
+                f"📲 **ផ្ញើទៅ Chat សិស្ស/អាណាព្យាបាល៖** `{count_student_parent}` នាក់\n"
+                f"🏫 **បាញ់ចូល Group ថ្នាក់រៀនសិស្ស៖** `{count_group}` គ្រុប"
             )
             bot.send_message(chat_id, report, parse_mode='Markdown')
 
         except Exception as e:
-            print(f"❌ Notice Broadcast Error: {e}")
+            print(f"❌ Notice Insert & Broadcast Error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
-            # 🏫 មុខងារ៖ Admin វាយក្នុងគ្រុបថ្នាក់ ដើម្បីឱ្យ Bot ចាប់ ID គ្រុបដាក់ជូនសិស្សក្នុងថ្នាក់នោះអូតូ
+    
+    
+    
     # ========================================================
     @bot.message_handler(commands=['setclass'])
     def set_class_group_id_command(message):
