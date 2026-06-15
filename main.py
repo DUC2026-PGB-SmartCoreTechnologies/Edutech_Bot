@@ -209,6 +209,4 @@ if __name__ == "__main__":
     flask_thread.daemon = True
     flask_thread.start()
 
-    # ២. បន្ទាប់មកទើបដុតបញ្ឆេះ Bot ឱ្យរត់តាមក្រោយ
-    print("🎯 Telegram Bot Is Running on Cloud...")
-   bot.polling(timeout=60, long_polling_timeout=60)
+
