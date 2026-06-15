@@ -13,10 +13,9 @@ from config import supabase
 # បង្ខំឱ្យវាទៅអូសទាញយក Key ពីផ្ទាំង Environment Variables របស់ Render ផ្ទាល់តែម្ដង មិនបាច់ឆ្លងកាត់ config ឡើយ
 TOKEN = os.environ.get("TELEGRAM_TOKEN") or os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
+import admin_handlers
+import student_handlers
 import helpers
-# បង្ខំឱ្យ Python រត់ចូលទៅអាន និងចុះឈ្មោះ @bot.message_handler ក្នុងឯកសារទាំងពីរនេះ
-from admin_handlers import 
-from student_handlers import 
 
 # 👁️ ៣. បង្ខំឱ្យ TeleBot បោះ Error គ្រប់យ៉ាងមកបង្ហាញលើ Terminal ខ្មៅ ហាមលាក់!
 logger = logging.getLogger('telebot')
