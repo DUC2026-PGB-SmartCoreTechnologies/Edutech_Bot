@@ -211,4 +211,4 @@ if __name__ == "__main__":
 
     # ២. បន្ទាប់មកទើបដុតបញ្ឆេះ Bot ឱ្យរត់តាមក្រោយ
     print("🎯 Telegram Bot Is Running on Cloud...")
-    bot.infinity_polling(non_stop=True, timeout=60, long_polling_timeout=60)
+   bot.infinity_polling(timeout=60, long_polling_timeout=60)
