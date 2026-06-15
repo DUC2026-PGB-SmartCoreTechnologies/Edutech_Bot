@@ -8,12 +8,14 @@ import logging
 
 # 📥 ១. Import configuration និង API Client ពី config.py
 from config import supabase, TELEGRAM_TOKEN
+
+# 🤖 ២. បង្កើតតួ Bot មេផ្លូវការ
+# បង្ខំឱ្យវាទាញពី Environment ផ្ទាល់ បើដាច់តម្លៃពី config
+TOKEN = TELEGRAM_TOKEN or os.environ.get("TELEGRAM_TOKEN")
+bot = telebot.TeleBot(TOKEN)
 import helpers
 import admin_handlers
 import student_handlers
-# 🤖 ២. បង្កើតតួ Bot មេផ្លូវការ
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
-
 
 # 👁️ ៣. បង្ខំឱ្យ TeleBot បោះ Error គ្រប់យ៉ាងមកបង្ហាញលើ Terminal ខ្មៅ ហាមលាក់!
 logger = logging.getLogger('telebot')
