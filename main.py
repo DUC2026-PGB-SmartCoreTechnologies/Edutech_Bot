@@ -1,4 +1,6 @@
 import telebot
+import threading
+from flask import Flask
 from telebot import types
 from datetime import datetime
 import threading
@@ -188,8 +190,7 @@ register_student_handlers(bot, supabase)
 # ========================================================
 # 🚀 ផ្នែកខាងក្រោមបង្អស់នៃ main.py (លុបកូដចាស់ៗចោល រួចជំនួសដោយកូដនេះ)
 # ========================================================
-import threading
-from flask import Flask
+
 
 app = Flask('')
 
