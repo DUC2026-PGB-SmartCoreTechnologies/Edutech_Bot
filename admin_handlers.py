@@ -7,26 +7,12 @@ def register_admin_teacher_handlers(bot, supabase):
     # ========================================================
     # 👑 មុខងារ៖ Admin វាយ /login (🔐 ប្រព័ន្ធចាក់សោរស្វ័យប្រវត្តិ)
     # ========================================================
-    @bot.message_handler(commands=['login'])
+  @bot.message_handler(commands=['login'])
     def admin_secret_login(message):
         chat_id = message.chat.id
         user_id = message.from_user.id
         
-        try:
-            admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
-            
-            if admin_check.data:
-                existing_admin_id = admin_check.data[0].get('telegram_id')
-                if user_id != existing_admin_id:
-                    bot.reply_to(message, "❌ **Sុំទោស!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ។ លោកអ្នកមិនអាច Login ចូលបានឡើយ។")
-                    print(f"⚠️ [SECURITY BLOCK] ID {user_id} ព្យាយាមលួច Login ត្រួតលើ Admin ចាស់ ID {existing_admin_id}!")
-                    return
-            
-        except Exception as e:
-            print(f"❌ Supabase Admin Lock Check Error: {e}")
-            bot.reply_to(message, "❌ 有បញ្ហាបច្ចេកទេសក្នុងការឆែកមើលសិទ្ធិ។")
-            return
-
+        # 🔄 កាត់យកពាក្យសម្ងាត់ដែលវាយបន្ទាប់ពី /login
         text_input = message.text.strip()[6:].strip()
         ADMIN_MASTER_PASSWORD = "DUC_Admin@2026"
         
@@ -39,6 +25,20 @@ def register_admin_teacher_handlers(bot, supabase):
             return
             
         try:
+            # 🔍 ជំហានគន្លឹះ៖ រត់ទៅអូសទាញឆែកមើលក្នុងតារាង users ថាមានអ្នកមានតួនាទីជា ADMIN ហើយឬនៅ?
+            admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
+            
+            # 🔒 លក្ខខណ្ឌចាក់សោរ៖ បើក្នុងប្រព័ន្ធមានទិន្នន័យ ADMIN រួចរាល់ហើយ
+            if admin_check.data:
+                existing_admin_id = admin_check.data[0].get('telegram_id')
+                
+                # បើលេខ Telegram ID អ្នកកំពុងវាយនេះ មិនមែនជា ID Admin ចាស់ដែលចុះឈ្មោះមុនគេទេ គឺបដិសេធភ្លាម!
+                if user_id != existing_admin_id:
+                    bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ។ លោកអ្នកមិនអាចលួច Login ត្រួតបានឡើយ។")
+                    print(f"⚠️ [SECURITY ALERT] Telegram ID: {user_id} ព្យាយាមលួចចូលត្រួតលើ Admin ចាស់ ID: {existing_admin_id}!")
+                    return
+
+            # 🔄 ប្រសិនបើឆ្លងផុត (ជាអ្នកចុះឈ្មោះមុនគេបង្អស់ ឬជា Admin ចាស់ដដែល) គឺរក្សាទុកទិន្នន័យចូល Supabase
             supabase.table("users").upsert({
                 "telegram_id": user_id,
                 "role": "ADMIN",
@@ -46,8 +46,9 @@ def register_admin_teacher_handlers(bot, supabase):
                 "language": "km"
             }, on_conflict="telegram_id").execute()
             
+            # 🎛️ បង្កើតផ្ទាំងប៊ូតុង Menu សម្រាប់ Admin
             admin_menu = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-            admin_menu.add("➕ បង្កើតគណនីគ្រូ", "📋 មើលបញ្ជីគ្រូ","👁️ ផ្ទាំងសិស្ស (Student Panel)", "🔙 ចាកចេញ (Logout)")
+            admin_menu.add("➕ បង្កើតគណនីគ្រូ", "📋 មើលបញ្ជីគ្រូ", "👁️ ផ្ទាំងសិស្ស (Student Panel)", "🔙 ចាកចេញ (Logout)")
         
             bot.send_message(chat_id, "🟢 **ផ្ទៀងផ្ទាត់សិទ្ធិ Admin មេជោគជ័យ!**", parse_mode='Markdown')
             
@@ -60,11 +61,11 @@ def register_admin_teacher_handlers(bot, supabase):
                 reply_markup=admin_menu,
                 parse_mode='Markdown'
             )
-            print(f"👑 [ADMIN LOGIN LIVE] Admin Telegram ID: {user_id} Verified and Saved.")
+            print(f"👑 [MASTER ADMIN ACTIVE] Master Admin ID: {user_id} Secured.")
                 
         except Exception as e:
-            print(f"❌ Admin Login Error: {e}")
-            bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
+            print(f"❌ Master Admin Check Error: {e}")
+            bot.reply_to(message, f"❌ មានបញ្ហាបច្ចេកទេសក្នុងការតភ្ជាប់ដាតាបេស៖ `{e}`")
 
     # ========================================================
     # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង Inline លើ Admin Dashboard
