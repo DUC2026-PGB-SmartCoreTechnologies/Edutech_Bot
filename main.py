@@ -210,4 +210,6 @@ if __name__ == "__main__":
     flask_thread.daemon = True
     flask_thread.start()
 
-
+# 🎯 ទុក ២ ជួរនេះដាច់ខាត ប៉ុន្តែសរសេរខ្លីៗបែបនេះវិញ៖
+    print("🎯 Telegram Bot Is Running on Cloud...")
+    bot.polling(none_stop=True)
