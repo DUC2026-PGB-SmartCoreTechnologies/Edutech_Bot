@@ -1,6 +1,6 @@
 import os
 from supabase import create_client, Client
-from config import TELEGRAM_TOKEN, supabase
+
  # 👈 ថែមជួរនេះ ដើម្បីអាន Key ពីកុំព្យូទ័រ
 # 🔐 ទាញយក Token និង API Keys ពី Environment Variable លើ Render
 # 🌐 ទាញយក Token ពី File .env មកប្រើអូតូ
