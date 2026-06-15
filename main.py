@@ -15,8 +15,8 @@ TOKEN = os.environ.get("TELEGRAM_TOKEN") or os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 import helpers
 # បង្ខំឱ្យ Python រត់ចូលទៅអាន និងចុះឈ្មោះ @bot.message_handler ក្នុងឯកសារទាំងពីរនេះ
-from admin_handlers import *
-from student_handlers import *
+from admin_handlers import 
+from student_handlers import 
 
 # 👁️ ៣. បង្ខំឱ្យ TeleBot បោះ Error គ្រប់យ៉ាងមកបង្ហាញលើ Terminal ខ្មៅ ហាមលាក់!
 logger = logging.getLogger('telebot')
@@ -30,7 +30,7 @@ logger.setLevel(logging.DEBUG)
 # 🔗 🔌 ផ្ដុំប្រព័ន្ធ Handlers ទាំងអស់ចូលគ្នា (លំដាប់ទី ១)
 # ========================================================
 #admin_handlers.register_admin_handlers(bot)    # 👑 ដំណើរការមុខងារ Admin ទាំងអស់
-register_admin_teacher_handlers(bot, supabase)  # 👩‍🏫 ដំណើរការមុខងារគ្រូ
+admin_handlers.register_admin_teacher_handlers(bot, supabase)  # 👩‍🏫 ដំណើរការមុខងារគ្រូ
 # ========================================================
 # ========================================================
 # 🎯 មុខងារផ្លូវកាត់ពិសេស៖ ដាក់ក្នុង main.py ផ្ទាល់ ធានា Admin ចុចលោតផ្ទាំងសិស្ស ១០០%
@@ -162,7 +162,7 @@ def handle_homework_upload(message):
 # ========================================================
 # 🎓 លំដាប់ទី ៣៖ ដំណើរការមុខងារសិស្សទាំងអស់ (ទុកនៅបាតក្រោមគេបង្អស់)
 # ========================================================
-register_student_handlers(bot, supabase)  
+student_handlers.register_student_handlers(bot, supabase)  
 
 # ========================================================
 # # ==========================================
