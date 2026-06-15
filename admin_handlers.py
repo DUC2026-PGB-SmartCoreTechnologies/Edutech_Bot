@@ -5,67 +5,67 @@ from datetime import datetime
 def register_admin_teacher_handlers(bot, supabase):
     
     # ========================================================
-# 👑 មុខងារ៖ Admin វាយ /login (កំណែទម្រង់ជួសជុលដកឃ្លា Indentation ត្រឹមត្រូវ)
-# ========================================================
-@bot.message_handler(commands=['login'])
-def admin_secret_login(message):
-    chat_id = message.chat.id
-    user_id = message.from_user.id
-    
-    # 🔄 កាត់យកពាក្យសម្ងាត់ដែលវាយបន្ទាប់ពី /login
-    text_input = message.text.strip()[6:].strip()
-    ADMIN_MASTER_PASSWORD = "DUC_Admin@2026"
-    
-    if not text_input:
-        bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយ Admin!**\n"
-                              "សូមវាយ៖ `/login លេខសម្ងាត់មេ`", parse_mode='Markdown')
-        return
+    # 👑 មុខងារ៖ Admin វាយ /login (ចាក់សោរស្វ័យប្រវត្តិកាពារ Admin ជាន់គ្នា)
+    # ========================================================
+    @bot.message_handler(commands=['login'])
+    def admin_secret_login(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
         
-    if text_input != ADMIN_MASTER_PASSWORD:
-        bot.reply_to(message, "❌ **លេខសម្ងាត់ Admin មិនត្រឹមត្រូវទេ!** សូមព្យាយាមម្ដងទៀត។")
-        return
+        # 🔄 កាត់យកពាក្យសម្ងាត់ដែលវាយបន្ទាប់ពី /login
+        text_input = message.text.strip()[6:].strip()
+        ADMIN_MASTER_PASSWORD = "DUC_Admin@2026"
         
-    try:
-        # 🔍 ឆែកមើលក្នុងដាតាបេសរក Admin មេដែលចុះឈ្មោះមុនគេបង្អស់
-        admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
-        
-        # 🔒 លក្ខខណ្ឌចាក់សោរ៖ បើមាន Admin ចារឈ្មោះក្នុងប្រព័ន្ធរួចហើយ
-        if admin_check.data:
-            existing_admin_id = admin_check.data[0].get('telegram_id')
+        if not text_input:
+            bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយ Admin!**\nសូមវាយ៖ `/login លេខសម្ងាត់មេ`", parse_mode='Markdown')
+            return
             
-            # បើមិនមែនជា ID Admin ចាស់ទេ គឺចាក់សោរបដិសេធភ្លាម!
-            if user_id != existing_admin_id:
-                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ។ លោកអ្នកមិនអាច Login ចូលបានឡើយ។")
-                return
+        if text_input != ADMIN_MASTER_PASSWORD:
+            bot.reply_to(message, "❌ **លេខសម្ងាត់ Admin មិនត្រឹមត្រូវទេ!** សូមព្យាយាមម្ដងទៀត។")
+            return
+            
+        try:
+            # 🔍 ជំហានគន្លឹះ៖ រត់ទៅអូសទាញឆែកមើលក្នុងតារាង users ថាមានអ្នកមានតួនាទីជា ADMIN ហើយឬនៅ?
+            admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
+            
+            # 🔒 លក្ខខណ្ឌចាក់សោរ៖ បើក្នុងប្រព័ន្ធមានទិន្នន័យ ADMIN រួចរាល់ហើយ
+            if admin_check.data:
+                existing_admin_id = admin_check.data[0].get('telegram_id')
+                
+                # បើមិនមែនជា ID Admin ចាស់ទេ គឺបដិសេធភ្លាម!
+                if user_id != existing_admin_id:
+                    bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ។ លោកអ្នកមិនអាច Login ត្រួតបានឡើយ។")
+                    return
 
-        # 🔄 បើឆ្លងផុត (ជាអ្នកចុះឈ្មោះមុនគេ ឬ Admin ចាស់ដដែល) គឺ Upsert ចូល Supabase ភ្លាម
-        supabase.table("users").upsert({
-            "telegram_id": user_id,
-            "role": "ADMIN",
-            "status": "APPROVED",
-            "language": "km"
-        }, on_conflict="telegram_id").execute()
-        
-        # 🎛️ បង្កើតប៊ូតុង Menu សម្រាប់ Admin
-        admin_menu = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-        admin_menu.add("➕ បង្កើតគណនីគ្រូ", "📋 មើលបញ្ជីគ្រូ", "👁️ ផ្ទាំងសិស្ស (Student Panel)", "🔙 ចាកចេញ (Logout)")
-    
-        bot.send_message(chat_id, "🟢 **ផ្ទៀងផ្ទាត់សិទ្ធិ Admin មេជោគជ័យ!**", parse_mode='Markdown')
-        
-        import helpers
-        helpers.send_admin_panel(bot, chat_id)
-        
-        bot.send_message(
-            chat_id, 
-            "👑 **លោកអ្នកក៏អាចប្រើប្រាស់ ប៊ូតុង Menu ខាងក្រោម នេះបានផងដែរ៖**", 
-            reply_markup=admin_menu,
-            parse_mode='Markdown'
-        )
-        print(f"👑 [MASTER ADMIN ACTIVE] Admin Telegram ID: {user_id} Secured.")
+            # 🔄 ប្រសិនបើឆ្លងផុត (ជាអ្នកចុះឈ្មោះមុនគេ ឬ Admin ចាស់ដដែល) គឺរក្សាទុកទិន្នន័យចូល Supabase
+            supabase.table("users").upsert({
+                "telegram_id": user_id,
+                "role": "ADMIN",
+                "status": "APPROVED",
+                "language": "km"
+            }, on_conflict="telegram_id").execute()
             
-    except Exception as e:
-        print(f"❌ Master Admin Secure Log Error: {e}")
-        bot.reply_to(message, f"❌ មានបញ្ហាបច្គេកទេសក្នុងការតភ្ជាប់ដាតាបេស៖ `{e}`")
+            # 🎛️ បង្កើតផ្ទាំងប៊ូតុង Menu សម្រាប់ Admin
+            admin_menu = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+            admin_menu.add("➕ បង្កើតគណនីគ្រូ", "📋 មើលបញ្ជីគ្រូ", "👁️ ផ្ទាំងសិស្ស (Student Panel)", "🔙 ចាកចេញ (Logout)")
+        
+            bot.send_message(chat_id, "🟢 **ផ្ទៀងផ្ទាត់សិទ្ធិ Admin មេជោគជ័យ!**", parse_mode='Markdown')
+            
+            import helpers
+            helpers.send_admin_panel(bot, chat_id)
+            
+            bot.send_message(
+                chat_id, 
+                "👑 **លោកអ្នកក៏អាចប្រើប្រាស់ ប៊ូតុង Menu ខាងក្រោម នេះបានផងដែរ៖**", 
+                reply_markup=admin_menu,
+                parse_mode='Markdown'
+            )
+            print(f"👑 [MASTER ADMIN ACTIVE] Admin Telegram ID: {user_id} Secured.")
+                
+        except Exception as e:
+            print(f"❌ Master Admin Check Error: {e}")
+            bot.reply_to(message, f"❌ មានបញ្ហាបច្ចេកទេសក្នុងការតភ្ជាប់ដាតាបេស៖ `{e}`")
+
     # ========================================================
     # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង Inline លើ Admin Dashboard
     # ========================================================
@@ -83,7 +83,7 @@ def admin_secret_login(message):
         elif action == "adm_guide_discipline":
             bot.send_message(chat_id, "⚖️ **[ កត់ត្រាវិន័យសិស្ស ]**\nសូមវាយ៖ `/adddiscipline ID_សិស្ស,បញ្ហាកើតឡើង,វិធានការកែប្រែ`", parse_mode='Markdown')
         elif action == "adm_guide_grade":
-            bot.send_message(chat_id, "✍️ **[ ដាក់ពិន្ទុ & Feedback ]**\nសូមវាយ៖ `/grade ID_Submission,ពិន្ទុ,មតិយោបល់`", parse_mode='Markdown')
+            bot.send_message(chat_id, "✍️ **[ ដាក់ពិន្ទu & Feedback ]**\nសូមវាយ៖ `/grade ID_Submission,ពិន្ទុ,មតិយោបល់`", parse_mode='Markdown')
         elif action == "adm_guide_notice":
             bot.send_message(chat_id, "📢 **[ ថែមសេចក្ដីប្រកាសសាលា ]**\nសូមវាយ៖ `/addnotice គោលដៅ, ចំណងជើង, ខ្លឹមសារព័ត៌មាន`", parse_mode='Markdown')
         elif action == "adm_guide_addteacher":
@@ -117,7 +117,7 @@ def admin_secret_login(message):
         try:
             admin_check = supabase.table("users").select("role").eq("telegram_id", user_id).execute()
             if not admin_check.data or admin_check.data[0].get('role') not in ['ADMIN', 'SUPER_ADMIN']:
-                bot.reply_to(message, "❌ **សុំទោស!** បញ្ជានេះសម្រាប់តែ Admin សាលាតែប៉ុណ្ណោះ।")
+                bot.reply_to(message, "❌ **សុំទោស!** បញ្ជានេះសម្រាប់តែ Admin សាលាតែប៉ុណ្ណោះ។")
                 return
 
             parts = text.split(',')
@@ -202,7 +202,7 @@ def admin_secret_login(message):
             teacher_menu.add("📚 ដាក់កិច្ចការផ្ទះ (Add HW)", "📊 មើលវត្តមានសិស្ស", "✍️ ដាក់ពិន្ទុសិស្ស (Grade)", "🔙 ចាកចេញ (Logout)")
             
             welcome_msg = (
-                "👩‍🏫 **[ ស្វាគមន៍ " + teacher_real_name + " ចូលកាន់ប្រព័ន្ធ DUC ]**\n"
+                f"👩‍🏫 **[ ស្វាគមន៍ {teacher_real_name} ចូលកាន់ប្រព័ន្ធ DUC ]**\n"
                 "--------------------------------------------------\n"
                 f"🆔 **ID គ្រូបង្រៀន៖** `{teacher_id_input}`\n"
                 "🔐 **ស្ថានភាព៖** ផ្ទៀងផ្ទាត់អត្តសញ្ញាណជោគជ័យ!\n"
@@ -462,7 +462,6 @@ def admin_secret_login(message):
             score = parts[1].strip()
             comment = parts[2].strip()
             
-            # ✅ កែសម្រួលតម្លៃជួរឈរឱ្យត្រូវចំជាមួយ database: grade_score & teacher_feedback
             supabase.table("student_submissions").update({
                 "grade_score": score, 
                 "teacher_feedback": comment, 
@@ -754,7 +753,7 @@ def admin_secret_login(message):
 
         except Exception as e:
             print(f"❌ Add Major & Update Teacher Error: {e}")
-            bot.send_message(chat_id, f"❌ **កំហុសបច្គេកទេស៖** `{e}`", parse_mode='Markdown')
+            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
 
     # ========================================================
     # 📢 មុខងារទី ១៤៖ /addnotice បង្កើតសេចក្ដីប្រកាស (Broadcast)
@@ -935,7 +934,7 @@ def admin_secret_login(message):
                     f"🎯 **ភ្ជាប់គ្រុបថ្នាក់រៀនអូតូជោគជ័យ!**\n\n"
                     f"🏫 **ថ្នាក់រៀន៖** `{class_name_input}`\n"
                     f"🆔 **ID គ្រុបដែលចាប់បាន៖** `{chat_id}`\n"
-                    f"👥 **ចំនូនសិស្សដែលទទួលបាន៖** `{updated_students_count}` នាក់ត្រូវបានដាក់បញ្ចូល។"
+                    f"👥 **ចំនួនសិស្សដែលទទួលបាន៖** `{updated_students_count}` នាក់ត្រូវបានដាក់បញ្ចូល។"
                 )
                 bot.send_message(chat_id, success_msg, parse_mode='Markdown')
             else:
@@ -1049,14 +1048,10 @@ def admin_secret_login(message):
                 f"📅 **កាលបរិច្ឆេទ៖** `{h_date}`\n"
                 f"----------------------------------------\n"
                 f"📲 **ផ្ញើទៅសមាជិក (Private)៖** `{count_private}` នាក់\n"
-                f"🏫 **បាញ់ចូលគ្រុបថ្នាក់រៀនអូត៖** `{count_group}` គ្រុប"
+                f"🏫 **បាញ់ចូលគ្រុបថ្នាក់រៀនអូតូ៖** `{count_group}` គ្រុប"
             )
             bot.send_message(chat_id, report_msg, parse_mode='Markdown')
 
         except Exception as e:
             print(f"❌ Add Holiday & Broadcast Error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
-            
-    
-    
-    
