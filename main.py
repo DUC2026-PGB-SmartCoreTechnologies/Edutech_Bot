@@ -185,7 +185,30 @@ register_student_handlers(bot, supabase)
 #     student_handlers.register_student_handlers(bot)
 # 🛰️ ៤. ដុតបញ្ឆេះប្រព័ន្ធមេ (Core Engine Polling)
 # ========================================================
+# ========================================================
+# 🚀 ផ្នែកខាងក្រោមបង្អស់នៃ main.py (លុបកូដចាស់ៗចោល រួចជំនួសដោយកូដនេះ)
+# ========================================================
+import threading
+from flask import Flask
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run_flask():
+    # ទាញយក Port ពី Render អូតូ បើអត់មានគឺប្រើ Port 10000
+    port = int(os.environ.get("PORT", 10000))
+    print(f"🔥 Flask Web Server កំពុងបើកដំណើរការលើ Port: {port}")
+    app.run(host='0.0.0.0', port=port)
+
 if __name__ == "__main__":
-    print("🎯 [SUCCESS] DUC System API Core Engine is live and Polling...")
-   # 💡 បន្ថែម allowed_updates ដើម្បីបង្ខំឱ្យ Bot ចាប់យកទាំងអក្សរ រូបភាព និងឯកសារ PDF គ្រប់ពេល
-bot.infinity_polling(allowed_updates=['message', 'edited_message', 'callback_query'])
+    # ១. បង្កើត Thread មួយដាច់ដោយឡែកដើម្បីបើក Flask Web Server មុនគេ បង្ការ Render គាំង Port
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+
+    # ២. បន្ទាប់មកទើបដុតបញ្ឆេះ Bot ឱ្យរត់តាមក្រោយ
+    print("🎯 Telegram Bot Is Running on Cloud...")
+    bot.infinity_polling(non_stop=True, timeout=60, long_polling_timeout=60)
