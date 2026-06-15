@@ -6,12 +6,10 @@ import time
 import os
 import logging
 
-# 📥 ១. Import configuration និង API Client ពី config.py
-from config import supabase, TELEGRAM_TOKEN
+from config import supabase 
 
-# 🤖 ២. បង្កើតតួ Bot មេផ្លូវការ
-# បង្ខំឱ្យវាទាញពី Environment ផ្ទាល់ បើដាច់តម្លៃពី config
-TOKEN = TELEGRAM_TOKEN or os.environ.get("TELEGRAM_TOKEN")
+# បង្ខំឱ្យវាទៅអូសទាញយក Key ពីផ្ទាំង Environment Variables របស់ Render ផ្ទាល់តែម្ដង មិនបាច់ឆ្លងកាត់ config ឡើយ
+TOKEN = os.environ.get("TELEGRAM_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 import helpers
 import admin_handlers
