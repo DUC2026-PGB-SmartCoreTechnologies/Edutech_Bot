@@ -12,8 +12,8 @@ from config import supabase
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 import helpers
-import admin_handlers
-import student_handlers
+from admin_handlers import *
+from student_handlers import *
 
 # 👁️ ៣. បង្ខំឱ្យ TeleBot បោះ Error គ្រប់យ៉ាងមកបង្ហាញលើ Terminal ខ្មៅ ហាមលាក់!
 logger = logging.getLogger('telebot')
