@@ -210,3 +210,13 @@ ALTER TABLE public.schedules
 DROP CONSTRAINT IF EXISTS fk_schedules_teacher,
 ADD CONSTRAINT fk_schedules_teacher 
 FOREIGN KEY (teacher_id) REFERENCES public.teachers(teacher_id) ON DELETE SET NULL;
+
+-- ១. បន្ថែមជួរឈរដែលខ្វះចូលទៅក្នុងតារាង users ភ្លាមៗ
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS status text DEFAULT 'PENDING';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS language text DEFAULT 'km';
+
+-- ២. កំណត់ឱ្យ telegram_id ទៅជា Unique ដើម្បីឱ្យកូដ upsert ដំណើរការបាន
+ALTER TABLE public.users ADD CONSTRAINT users_telegram_id_unique UNIQUE (telegram_id);
+
+-- ៣. បិទជញ្ជាំងការពារ RLS ការពារកូដពី Render ជាប់គាំង
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;

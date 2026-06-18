@@ -1,9 +1,11 @@
 import os
+from dotenv import load_dotenv
 from supabase import create_client, Client
-from config import TELEGRAM_TOKEN, supabase
- # 👈 ថែមជួរនេះ ដើម្បីអាន Key ពីកុំព្យូទ័រ
+# from config import TELEGRAM_TOKEN, supabase
+# 👈 ថែមជួរនេះ ដើម្បីអាន Key ពីកុំព្យូទ័រ
 # 🔐 ទាញយក Token និង API Keys ពី Environment Variable លើ Render
 # 🌐 ទាញយក Token ពី File .env មកប្រើអូតូ
+load_dotenv()
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
