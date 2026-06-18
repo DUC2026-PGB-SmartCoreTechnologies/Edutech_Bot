@@ -48,10 +48,13 @@ def force_admin_enter_student_panel(message):
     )
 # 🚀 មុខងារមេ /start (បង្ហាញមគ្គុទ្ទេសក៍ណែនាំគ្រប់តួនាទី - GROUP COMPATIBLE)
 # ========================================================
+# 🚀 មុខងារមេ /start (បង្ហាញមគ្គុទ្ទេសក៍ណែនាំគ្រប់តួនាទី - GROUP COMPATIBLE)
+# ========================================================
 @bot.message_handler(commands=['start'])
 def start_command(message):
     chat_id = message.chat.id
     user_id = message.from_user.id
+    first_name = message.from_user.first_name
     
     # 📝 ផ្ទាំងអត្ថបទណែនាំ (Markdown Format)
     welcome_guide = (
@@ -60,15 +63,15 @@ def start_command(message):
         "🤖 ខ្ញុំជា Bot ជំនួយការផ្លូវការរបស់សាលារៀន។ សូមអានការណែនាំខាងក្រោមដើម្បីចូលប្រើប្រាស់គណនីរបស់អ្នក៖\n\n"
         
         "👤 **១. សម្រាប់សិស្សានុសិស្ស (Student Guide)៖**\n"
-        "👉 **របៀប Login៖** មិនបាច់វាយបញ្ជាអ្វីទាំងអស់! សូមវាយបញ្ចូលតែ **លេខកូដសម្ងាល់សិស្ស (Student ID)** របស់អ្នក រួចចុចផ្ញើមកកាន់ Bot ភ្លាមជាការស្រេច (ឧទាហរណ៍៖ `STU001`)។\n"
-        "👉 **របៀបចុះឈ្មោះថ្មី៖** ប្រសិនបើមិនទាន់មាន ID ទេ សូមវាយបញ្ជា `/register` ដើម្បីស្នើសុំចុះឈ្មោះ។\n\n"
+        "👉 **របៀប Login៖** មិនបាច់វាយបញ្ជាអ្វីទាំងអស់! សូមវាយបញ្ចូលតែ **លេខកូដសម្ងាល់សិស្ស (Student ID)** របស់អ្នក រួចចុចផ្ញើមកកាន់ Bot ភ្លាមជាការស្រេច (ឧទាហរណ៍៖ `STU001`)。\n"
+        "👉 **របៀបចុះឈ្មោះថ្មី៖** ប្រសិនបើមិនទាន់មាន ID ទេ សូមវាយបញ្ជា `/register` ដើម្បីស្នើសុំចុះឈ្មោះ。\n\n"
         
         "👑 **២. សម្រាប់ថ្នាក់ដឹកនាំ/រដ្ឋបាល (Admin Guide)៖**\n"
-        "👉 **របៀប Login៖** សូមវាយបញ្ជា `/login` តាមដោយដកឃ្លា និងលេខកូដសម្ងាត់មេរបស់សាលា។\n"
+        "👉 **របៀប Login៖** សូមវាយបញ្ជា `/login` តាមដោយដកឃ្លា និងលេខកូដសម្ងាត់មេរបស់សាលា。\n"
         "✍️ គំរូត្រឹមត្រូវ៖ `/login DUC_Admin@2026`\n\n"
         
         "👩‍🏫 **៣. សម្រាប់លោកគ្រូ-អ្នកគ្រូ (Teacher Guide)៖**\n"
-        "👉 **របៀប Login៖** សូមវាយបញ្ជា `/tlogin` តាមដោយដកឃ្លា និងលេខកូដសម្ងាត់គ្រូបង្រៀន។\n"
+        "👉 **របៀប Login៖** សូមវាយបញ្ជា `/tlogin` តាមដោយដកឃ្លា និងលេខកូដសម្ងាត់គ្រូបង្រៀន。\n"
         "✍️ គំរូត្រឹមត្រូវ៖ `/tlogin TCH_Password@2026`\n"
         "--------------------------------------------------\n"
         "🌐 *សូមជ្រើសរើសភាសាខាងក្រោម ដើម្បីចាប់ផ្ដើមដំណើរការ៖*"
@@ -81,19 +84,50 @@ def start_command(message):
         types.InlineKeyboardButton("English 🇬🇧", callback_data="lang_en"))
     
     try:
-        # 🔄 បង្កើត ឬអាប់ដេតគណនីបម្រុងទុកឱ្យគេក្នុង Supabase (ប្រើ on_conflict ការពារ Error ស្ទួន)
-        supabase.table("users").upsert(
-            {"telegram_id": user_id, "status": "PENDING", "language": "km"}, 
-            on_conflict="telegram_id"
-        ).execute()
-        print(f"📩 [CONNECTED] Sync ទិន្នន័យ ID: {user_id} ចូល Supabase រួចរាល់។")
+        # 1. ពិនិត្យមើលជាមុនសិនថាតើ User ម្នាក់នេះមានគណនីក្នុង Database ហើយឬនៅ
+        check_user = supabase.table("users").select("role").eq("telegram_id", user_id).execute()
+        
+        if check_user.data:
+            # បើមានគណនីរួចហើយ គឺរក្សាទុកទិន្នន័យដដែល (មិនបាច់ធ្វើអ្វីទេ)
+            print(f"ℹ️ [EXISTING USER] User ID: {user_id} មានគណនីរួចហើយ។")
+        else:
+            # បើមិនទាន់មានគណនីទេ ត្រូវឆែកមើលថាតើតារាង 'users' ស្ងាត់ជ្រងំ (គ្មានមនុស្សសោះ) មែនទេ?
+            all_users = supabase.table("users").select("id").limit(1).execute()
+            
+            # លក្ខខណ្ឌ៖ បើគ្មាននរណាសោះ (លទ្ធផល = 0) ឱ្យធ្វើជា SUPER_ADMIN, បើមានគេមុនហើយ ឱ្យធ្វើជាសិស្សធម្មតា PENDING
+            if len(all_users.data) == 0:
+                assigned_role = "SUPER_ADMIN"
+                assigned_status = "APPROVED"
+                print(f"👑 [FIRST USER DETECTED] កំណត់ ID: {user_id} ជា SUPER_ADMIN!")
+                
+                # បញ្ចូលទៅក្នុងតារាង 'admins' ផងដែរការពារការទាមទារទិន្នន័យពីផ្ទាំង Admin Panel
+                try:
+                    supabase.table("admins").upsert({"telegram_id": user_id, "role": "SUPER_ADMIN"}, on_conflict="telegram_id").execute()
+                except Exception as admin_err:
+                    print(f"❌ [ADMINS TABLE INSERT ERROR]: {admin_err}")
+            else:
+                assigned_role = "student"
+                assigned_status = "PENDING"
+                print(f"👤 [NEW USER] កំណត់ ID: {user_id} ជា User ធម្មតា (PENDING)។")
+
+            # 2. រក្សាទុកទិន្នន័យចូលតារាង 'users' ទៅតាមលក្ខខណ្ឌខាងលើ
+            supabase.table("users").insert({
+                "telegram_id": user_id, 
+                "name": first_name,
+                "role": assigned_role,
+                "status": assigned_status, 
+                "language": "km"
+            }).execute()
+            
+            # ប្រាប់ដំណឹងពិសេសបើគាត់បានធ្វើជា Admin ដំបូងគេ
+            if assigned_role == "SUPER_ADMIN":
+                bot.send_message(chat_id, "🎉 **[ប្រព័ន្ធស្វ័យប្រវត្តិ]** អ្នកគឺជាមនុស្សដំបូងគេបង្អស់! ប្រព័ន្ធបានតម្លើងគណនីរបស់អ្នកជា **SUPER_ADMIN** រួចរាល់ហើយ។")
         
     except Exception as e:
         print(f"❌ [SUPABASE SYNC ERROR]៖ {e}")
-        # ទោះបីជាដាច់ណេត Supabase ក៏កូដនៅតែរត់ទៅផ្ញើសារដដែល មិនឱ្យគាំង Bot ទេ
         
     try:
-        # 📤 ផ្ញើអត្ថបទព្រមទាំងប៊ូតុងជ្រើសរើសភាសាទៅកាន់ Chat (ទោះក្នុងគ្រុបក៏លោតដែរ)
+        # 📤 ផ្ញើអត្ថបទព្រមទាំងប៊ូតុងជ្រើសរើសភាសាទៅកាន់ Chat
         bot.send_message(chat_id, welcome_guide, parse_mode='Markdown', reply_markup=markup)
         print(f"✅ [SUCCESS] បានបាញ់ផ្ញើសារ Guide ទៅកាន់ Chat ID: {chat_id} ជោគជ័យ!")
     except Exception as e:
