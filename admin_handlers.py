@@ -1212,7 +1212,7 @@ def register_admin_teacher_handlers(bot, supabase):
                 "content": content,
                 "notice_type": target, 
                 "created_by_telegram_id": int(user_id) 
-            }).execute()
+            }).select().execute()
 
             # ចាប់យក notice_id ដែលទើបតែ Insert មិញ
             notice_id = notice_res.data[0]['id'] if notice_res.data else None
