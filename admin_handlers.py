@@ -360,9 +360,9 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ `{e}`")
 
 
-    # ========================================================
-    # ⚖️ មុខងារ៖ កត់ត្រាវិន័យសិស្ស (/adddiscipline) - ទម្រង់ Wizard Steps
-    # ========================================================
+   # ===================================================================================
+    # ⚖️ មុខងារ៖ កត់ត្រាវិន័យសិស្ស (/adddiscipline) - ទម្រង់ Wizard Steps (Sync Columns DB ១០០%)
+    # ===================================================================================
     @bot.message_handler(commands=['adddiscipline'])
     def add_discipline_wizard(message):
         chat_id = message.chat.id
@@ -373,38 +373,38 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
             return
 
-        sent_msg = bot.send_message(chat_id, "⚖️ **[កត់ត្រាវិន័យ - ជំហាន ១/៣]** សូមបំពេញ **ID សិស្ស** (ឧទាហរណ៍៖ STU001)៖")
+        sent_msg = bot.send_message(chat_id, "⚖️ **[កត់ត្រាវិន័យ - ជំហាន ១/៣]** សូមបំពេញ **លេខសម្គាល់ ID សិស្ស** (ឧទាហរណ៍៖ STU001)៖")
         bot.register_next_step_handler(sent_msg, process_disc_id)
 
     def process_disc_id(message):
         chat_id = message.chat.id
-        stu_id = message.text.strip()
-        sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ២/៣]** សូមរៀបរាប់ **បញ្ហាវិន័យដែលកើតឡើង**៖")
+        stu_id = message.text.strip().upper()
+        sent_msg = bot.send_message(chat_id, "👉 **[ជំហាន ២/៣]** សូមរៀបរាប់ **បញ្ហាវិន័យ/កំហុសដែលកើតឡើង** ៖")
         bot.register_next_step_handler(sent_msg, process_disc_issue, stu_id)
 
     def process_disc_issue(message, stu_id):
         chat_id = message.chat.id
-        issue = message.text.strip()
-        sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ៣/៣]** សូមបំពេញ **វិធានការកែប្រែ/ពិន័យ**៖")
-        bot.register_next_step_handler(sent_msg, process_disc_final, stu_id, issue)
+        incident_desc = message.text.strip()
+        sent_msg = bot.send_message(chat_id, "👉 **[ជំហាន ៣/៣]** សូមបំពេញ **វិធានការកែប្រែ/វិន័យ** ៖")
+        bot.register_next_step_handler(sent_msg, process_disc_final, stu_id, incident_desc)
 
-    def process_disc_final(message, stu_id, issue):
+    def process_disc_final(message, stu_id, incident_desc):
         chat_id = message.chat.id
-        action_input = message.text.strip()
+        corrective_act = message.text.strip()
         try:
-            # 🟢 កែសម្រួលចំៗ៖ ប្ដូរពី "action_taken" មកជា "action" ឱ្យត្រូវនឹង Column ពិតក្នុង DB បង
+            # 🟢 💡 កែតម្រូវចំៗ៖ ប្រើ 'incident_description' និង 'corrective_action' ឱ្យត្រូវតាម Supabase របស់បងបេះបិទ
             res = supabase.table("discipline_records").insert({
                 "student_id": stu_id, 
-                "issue": issue, 
-                "action": action_input
+                "incident_description": incident_desc, 
+                "corrective_action": corrective_act
             }).execute()
             
             if res.data: 
-                bot.send_message(chat_id, f"🟢 **កត់ត្រាវិន័យជោគជ័យ!**\n🔹 **ID សិស្ស៖** {stu_id}\n🔹 **បញ្ហា៖** {issue}\n🔹 **វិធានការ៖** {action_input}")
+                bot.send_message(chat_id, f"🟢 **កត់ត្រាវិន័យសិស្សចូលដាតាបេសជោគជ័យ!**\n--------------------------------------------------\n🆔 **ID សិស្ស៖** `{stu_id}`\n📝 **កំហុស/បញ្ហា៖** _{incident_desc}_\n⚖️ **វិធានការកែប្រែ៖** *{corrective_act}*")
             else:
-                bot.send_message(chat_id, "❌ ដាតាបេសបដិសេធការរក្សាទុក។")
+                bot.send_message(chat_id, "❌ បរាជ័យ៖ ដាតាបេសបដិសេធការរក្សាទុកទិន្នន័យ។")
         except Exception as e: 
-            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
+            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
 
 
     # ========================================================
