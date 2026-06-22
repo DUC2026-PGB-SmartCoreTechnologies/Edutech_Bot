@@ -1631,7 +1631,7 @@ def register_admin_teacher_handlers(bot, supabase):
 
             # 🔎 ២. ទាញយកទិន្នន័យចាំបាច់ពី Supabase
             # ទាញយកបញ្ជី Homework ទាំងអស់ដែលគ្រូបានដាក់
-            hw_res = supabase.table("homework").select("id", "class_level", "subject").execute()
+            hw_res = supabase.table("homework").select("id", "class_level", "subject_name").execute()
             # ទាញយកបញ្ជីដែលសិស្សបានប្រគល់រួច
             submissions_res = supabase.table("homework_submissions").select("homework_id", "status").execute()
             # ទាញយកបញ្ជីសិស្សទាំងអស់ដើម្បីដឹងចំនួនសិស្សក្នុងថ្នាក់នីមួយៗ
