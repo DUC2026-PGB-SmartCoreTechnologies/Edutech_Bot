@@ -390,13 +390,21 @@ def register_admin_teacher_handlers(bot, supabase):
 
     def process_disc_final(message, stu_id, issue):
         chat_id = message.chat.id
-        action = message.text.strip()
+        action_input = message.text.strip()
         try:
-            res = supabase.table("discipline_records").insert({"student_id": stu_id, "issue": issue, "action_taken": action}).execute()
-            if res.data:
-                bot.send_message(chat_id, f"🟢 **កត់ត្រាវិន័យជោគជ័យ!**\n🔹 ID សិស្ស៖ {stu_id}\n🔹 បញ្ហា៖ {issue}\n🔹 វិធានការ៖ {action}")
-        except Exception as e:
-            bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ `{e}`")
+            # 🟢 កែសម្រួលចំៗ៖ ប្ដូរពី "action_taken" មកជា "action" ឱ្យត្រូវនឹង Column ពិតក្នុង DB បង
+            res = supabase.table("discipline_records").insert({
+                "student_id": stu_id, 
+                "issue": issue, 
+                "action": action_input
+            }).execute()
+            
+            if res.data: 
+                bot.send_message(chat_id, f"🟢 **កត់ត្រាវិន័យជោគជ័យ!**\n🔹 **ID សិស្ស៖** {stu_id}\n🔹 **បញ្ហា៖** {issue}\n🔹 **វិធានការ៖** {action_input}")
+            else:
+                bot.send_message(chat_id, "❌ ដាតាបេសបដិសេធការរក្សាទុក។")
+        except Exception as e: 
+            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
 
 
     # ========================================================
