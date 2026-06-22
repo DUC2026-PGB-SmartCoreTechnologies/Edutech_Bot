@@ -202,25 +202,34 @@ student_handlers.register_student_handlers(bot, supabase)
 # # 🌐 បើក Web Server Flask การពារ Bot Sleep លើ Render
 # # ==========================================
 
+# ========================================================
+# 🌐 ១. បើកដំណើរការ Flask Web Server ដើម្បីឆ្លើយតប Render Port Scan
+# ========================================================
+web_app = Flask('')
 
-# # from flask import Flask
-# # web_app = Flask('')
-# # @web_app.route('/')
-# # def home(): return "DUC API System Sprint 4 Baseline Live!"
+@web_app.route('/')
+def home(): 
+    return "DUC API System Sprint 4 Baseline Live!"
 
-# # def run_web_server():
-# #     bot_port = int(os.environ.get("PORT", 10000))
-# #     web_app.run(host='0.0.0.0', port=bot_port)
+def run_web_server():
+    bot_port = int(os.environ.get("PORT", 10000))
+    web_app.run(host='0.0.0.0', port=bot_port)
 
-# # threading.Thread(target=run_web_server, daemon=True).start()
+# ដុតបញ្ឆេះឱ្យ Flask រត់ជា Thread ស្ងាត់ៗនៅពីក្រោយ (Background)
+threading.Thread(target=run_web_server, daemon=True).start()
 
-# if __name__ == "__main__":
-#     print("🎯 [SUCCESS] DUC System API Core Engine is live and Polling...")
-#     bot.infinity_polling()
-#     student_handlers.register_student_handlers(bot)
-# 🛰️ ៤. ដុតបញ្ឆេះប្រព័ន្ធមេ (Core Engine Polling)
+
+# ========================================================
+# 🛰️ ២. ដុតបញ្ឆេះប្រព័ន្ធមេ (Core Engine Polling)
 # ========================================================
 if __name__ == "__main__":
+    print("📢 [SYSTEM] Registering handlers...")
+    
+    # ⚠️ ត្រូវចុះឈ្មោះ Handler របស់សិស្ស និង Admin ទាំងអស់ឱ្យរួចរាល់មុនគេបង្អស់
+    student_handlers.register_student_handlers(bot)
+    # admin_handlers.register_admin_handlers(bot) # (បើមាន)
+    
     print("🎯 [SUCCESS] DUC System API Core Engine is live and Polling...")
-   # 💡 បន្ថែម allowed_updates ដើម្បីបង្ខំឱ្យ Bot ចាប់យកទាំងអក្សរ រូបភាព និងឯកសារ PDF គ្រប់ពេល
-bot.infinity_polling(allowed_updates=['message', 'edited_message', 'callback_query'])
+    
+    # 🚀 ហៅ Polling នៅជួរចុងក្រោយគេបង្អស់ ដើម្បីបង្ខំឱ្យ Bot ដំណើរការ និងចាប់យកគ្រប់ Updates
+    bot.infinity_polling(allowed_updates=['message', 'edited_message', 'callback_query'])
