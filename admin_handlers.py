@@ -1612,6 +1612,117 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ School Stats Error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
+            # ===================================================================================
+    # 📊 មុខងារ៖ Admin វាយ /hw_analytics ដើម្បីមើលអត្រាប្រគល់កិច្ចការផ្ទះរបស់សិស្សតាមថ្នាក់
+    # ===================================================================================
+    @bot.message_handler(commands=['hw_analytics'])
+    def hw_analytics_command(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
+        try:
+            # 🔒 ១. ឆែកសិទ្ធិ Admin
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិមើលទិន្នន័យនេះឡើយ។")
+                return
+
+            bot.send_message(chat_id, "⏳ **កំពុងវិភាគទិន្នន័យ Homework និងគណនាភាគរយ...**")
+
+            # 🔎 ២. ទាញយកទិន្នន័យចាំបាច់ពី Supabase
+            # ទាញយកបញ្ជី Homework ទាំងអស់ដែលគ្រូបានដាក់
+            hw_res = supabase.table("homeworks").select("id", "class_level", "subject").execute()
+            # ទាញយកបញ្ជីដែលសិស្សបានប្រគល់រួច
+            submissions_res = supabase.table("homework_submissions").select("homework_id", "status").execute()
+            # ទាញយកបញ្ជីសិស្សទាំងអស់ដើម្បីដឹងចំនួនសិស្សក្នុងថ្នាក់នីមួយៗ
+            students_res = supabase.table("students").select("class_level").execute()
+
+            if not hw_res.data:
+                bot.send_message(chat_id, "ℹ️ **មិនទាន់មានទិន្នន័យកិច្ចការផ្ទះ (Homework) នៅក្នុងប្រព័ន្ធនៅឡើយទេ។**")
+                return
+
+            # 🧮 ៣. ដំណើរការគណនាស្ថិតិតាមថ្នាក់ (Data Processing)
+            # គណនាចំនួនសិស្សសរុបក្នុងមួយថ្នាក់ៗ
+            class_student_count = {}
+            if students_res.data:
+                for s in students_res.data:
+                    c_level = s.get('class_level', '').strip().upper()
+                    if c_level:
+                        class_student_count[c_level] = class_student_count.get(c_level, 0) + 1
+
+            # រាប់ចំនួនកិច្ចការដែលបានដាក់ និងការប្រគល់តាមថ្នាក់
+            class_analytics = {}
+            
+            # បង្កើតទីតាំងដេកចាំសម្រាប់ថ្នាក់នីមួយៗដែលមាន Homework
+            for hw in hw_res.data:
+                c_level = hw.get('class_level', '').strip().upper()
+                if not c_level: continue
+                
+                if c_level not in class_analytics:
+                    class_analytics[c_level] = {
+                        "total_hw_assigned": 0,
+                        "expected_submissions": 0,
+                        "actual_submissions": 0
+                    }
+                
+                class_analytics[c_level]["total_hw_assigned"] += 1
+                # ចំនួនដែលត្រូវប្រគល់សរុប = ចំនួនកិច្ចការដែលដាក់ x ចំនួនសិស្សក្នុងថ្នាក់នោះ
+                students_in_class = class_student_count.get(c_level, 0)
+                class_analytics[c_level]["expected_submissions"] += students_in_class
+
+            # រាប់ចំនួនដែលសិស្សបានប្រគល់ពិតប្រាកដ (Actual Submissions)
+            if submissions_res.data:
+                # បង្កើត Dictionary ងាយស្រួលរកមើលថាតើ Homework ID នោះជារបស់ថ្នាក់ណា
+                hw_to_class = {hw['id']: hw['class_level'].strip().upper() for hw in hw_res.data if hw.get('class_level')}
+                
+                for sub in submissions_res.data:
+                    hw_id = sub.get('homework_id')
+                    status = sub.get('status', '').upper()
+                    
+                    # រាប់តែទិន្នន័យដែលបានប្រគល់រួច (SUBMITTED ឬ GRADED)
+                    if hw_id in hw_to_class and status in ['SUBMITTED', 'GRADED']:
+                        c_level = hw_to_class[hw_id]
+                        if c_level in class_analytics:
+                            class_analytics[c_level]["actual_submissions"] += 1
+
+            # 🟢 ៤. រៀបចំសាររបាយការណ៍លទ្ធផលផ្ញើជូន Admin
+            report_msg = (
+                "📊 **[ របាយការណ៍វិភាគកិច្ចការផ្ទះ (Homework Analytics) ]**\n"
+                f"📆 *ប្រព័ន្ធធ្វើបច្ចុប្បន្នភាព៖ {datetime.now().strftime('%d-%m-%Y %H:%M')}*\n"
+                f"----------------------------------------\n\n"
+            )
+
+            for c_level, data in sorted(class_analytics.items()):
+                assigned = data["total_hw_assigned"]
+                expected = data["expected_submissions"]
+                actual = data["actual_submissions"]
+                
+                # គណនាភាគរយនៃការប្រគល់កិច្ចការផ្ទះ
+                rate = (actual / expected * 100) if expected > 0 else 0.0
+                
+                # ដាក់រូបតំណាង (Emoji) តាមកម្រិតភាគរយឧស្សាហ៍របស់សិស្ស
+                if rate >= 80: emoji = "🟢"
+                elif rate >= 50: emoji = "🟡"
+                else: emoji = "🔴"
+
+                report_msg += (
+                    f"{emoji} **ថ្នាក់៖ {c_level}**\n"
+                    f" └ 📚 ចំនួនកិច្ចការដែលគ្រូដាក់៖ `{assigned}` មេរៀន\n"
+                    f" └ 📥 អត្រាប្រគល់កិច្ចការ៖ `{actual}/{expected}` ដង\n"
+                    f" └ 📊 ភាគរយសម្រេចបាន៖ **{rate:.1f}%**\n\n"
+                )
+
+            report_msg += (
+                f"----------------------------------------\n"
+                "💡 _កំណត់សម្គាល់៖_\n"
+                "🟢 ឧស្សាហ៍ (>=80%) | 🟡 មធ្យម (50-79%) | 🔴 ខ្ជិល (<50%)"
+            )
+
+            bot.send_message(chat_id, report_msg, parse_mode='Markdown')
+
+        except Exception as e:
+            print(f"❌ HW Analytics Error: {e}")
+            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
             
             
     
