@@ -1686,11 +1686,11 @@ def register_admin_teacher_handlers(bot, supabase):
                             class_analytics[c_level]["actual_submissions"] += 1
 
             # 🟢 ៤. រៀបចំសាររបាយការណ៍លទ្ធផលផ្ញើជូន Admin
-           # 🟢 ៤. រៀបចំសាររបាយការណ៍លទ្ធផលផ្ញើជូន Admin (ទម្រង់សុវត្ថិភាពខ្ពស់)
+        # 🟢 ៤. រៀបចំសាររបាយការណ៍លទ្ធផលផ្ញើជូន Admin (ទម្រង់សុវត្ថិភាពដាច់សាច់ ១០០%)
             report_msg = (
-                "📊 **[ របាយការណ៍វិភាគកិច្ចការផ្ទះ (Homework Analytics) ]**\n"
-                f"📆 *ប្រព័ន្ធធ្វើបច្ចុប្បន្នភាព៖ {datetime.now().strftime('%d-%m-%Y %H:%M')}*\n"
-                "----------------------------------------\n\n"
+                "📊 [ របាយការណ៍វិភាគកិច្ចការផ្ទះ (Homework Analytics) ]\n"
+                f"📆 ប្រព័ន្ធធ្វើបច្ចុប្បន្នភាព៖ {datetime.now().strftime('%d-%m-%Y %H:%M')}\n"
+                "========================================\n\n"
             )
 
             for c_level, data in sorted(class_analytics.items()):
@@ -1707,19 +1707,20 @@ def register_admin_teacher_handlers(bot, supabase):
                 else: emoji = "🔴"
 
                 report_msg += (
-                    f"{emoji} **ថ្នាក់៖ {c_level}**\n"
-                    f" └ 📚 ចំនួនកិច្ចការដែលគ្រូដាក់៖ `{assigned}` មេរៀន\n"
-                    f" └ 📥 អត្រាប្រគល់កិច្ចការ៖ `{actual}/{expected}` ដង\n"
-                    f" └ 📊 ភាគរយសម្រេចបាន៖ **{rate:.1f}%**\n\n"
+                    f"{emoji} ថ្នាក់៖ {c_level}\n"
+                    f" └ 📚 ចំនួនកិច្ចការដែលគ្រូដាក់៖ {assigned} មេរៀន\n"
+                    f" └ 📥 អត្រាប្រគល់កិច្ចការ៖ {actual}/{expected} ដង\n"
+                    f" └ 📊 ភាគរយសម្រេចបាន៖ {rate:.1f}%\n\n"
                 )
 
             report_msg += (
-                "----------------------------------------\n"
-                "💡 **កំណត់សម្គាល់៖**\n"
+                "========================================\n"
+                "💡 កំណត់សម្គាល់៖\n"
                 "🟢 ឧស្សាហ៍ (>=80%) | 🟡 មធ្យម (50-79%) | 🔴 ខ្ជិល (<50%)"
             )
 
-            bot.send_message(chat_id, report_msg, parse_mode='Markdown')
+            # ⚠️ ចំណុចសំខាន់៖ លុប parse_mode='Markdown' ចេញ ដើម្បីការពារការគាំងដោយសារសញ្ញា _ ក្នុងឈ្មោះថ្នាក់
+            bot.send_message(chat_id, report_msg)
 
         except Exception as e:
             print(f"❌ HW Analytics Error: {e}")
