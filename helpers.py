@@ -44,7 +44,7 @@ def main_menu(lang):
     )
     return markup
 # ===================================================================================
-# 🎛️ ផ្ទាំង Menu គ្រាប់ចុច Inline សម្រាប់ Admin (កំណែទម្រង់ Sync ជាមួយ Callback ដើរ ១០០%)
+# 🎛️ ផ្ទាំង Menu គ្រាប់ចុច Inline សម្រាប់ Admin (កំណែទម្រង់ដោះស្រាយបញ្ហាសិទ្ធិ និងលុបកូដគាំង)
 # ===================================================================================
 def send_admin_panel(bot, chat_id):
     admin_msg = (
@@ -56,18 +56,17 @@ def send_admin_panel(bot, chat_id):
         "🔹 រាយឈ្មោះថ្នាក់រៀនទាំងអស់៖ `/list_classes`\n"
         "🔹 រាយឈ្មោះផ្នែក/ដេប៉ាតាម៉ង់៖ `/list_depts`\n"
         "🔹 រាយឈ្មោះលោកគ្រូ-អ្នកគ្រូទាំងអស់៖ `/list_teachers`\n"
-        "🔹 រាយឈ្មោះមុខវិជ្ជាតាមផ្នែក៖ `/dept_subjects`\n"
-        "🔹 រាយឈ្មោះសិស្សក្នុងថ្នាក់៖ `/class_students ឈ្មោះថ្នាក់`\n\n"
+        "🔹 មុខវិជ្ជាសកម្មតាមផ្នែក ៖ `/list_depts`\n\n"
         
         "👤 **២. គ្រប់គ្រងសិស្ស និងវិន័យ (Students & Discipline)៖**\n"
-        "🔹 ថែមសិស្ស៖ `/addstu`\n"
-        "🔹 កត់ត្រាវិន័យ៖ `/adddiscipline`\n"
-        "🔹 **អនុម័តសិស្សថ្មី៖** `/approve ID_Telegram`\n"
+        "🔹 ថែមសិស្សថ្មី (Wizard)៖ `/addstu`\n"
+        "🔹 កត់ត្រាវិន័យ (Wizard)៖ `/adddiscipline`\n"
+        "🔹 **អនុម័តសិស្សថ្មី៖** `/approve`\n"
         "🔹 មើលសិស្សចុះឈ្មោះថ្មី៖ `/checkreq` 🔍\n\n"
         
         "📝 **៣. គ្រប់គ្រងកិច្ចការផ្ទះ (Homework Management)៖**\n"
         "📅 ថែមតារាងកាលវិភាគ៖ `/addschedule`\n"
-        "🔹 ដាក់ពិន្ទុ & Feedback ឱ្យសិស្ស៖ `/grade`\n\n"
+        "🔹 ដាក់ពិន្ទុ & Feedback ៖ `/grade`\n\n"
         
         "📅 **៤. សេចក្ដីជូនដំណឹង (Notices)៖**\n"
         "🔹 ថែមសេចក្ដីប្រកាស៖ `/addnotice`\n"
@@ -77,20 +76,20 @@ def send_admin_panel(bot, chat_id):
         "🔹 ថែមគណនីគ្រូថ្មី៖ `/addteacher`\n"
         "🔹 ថែមផ្នែកឱ្យគ្រូ៖ `/adddept`\n"
         "🔹 ថែមជំនាញឱ្យគ្រូ៖ `/addmajor`\n"
-        "🔗 ភ្ជាប់គ្រុបថ្នាក់អូតូ (វាយក្នុងគ្រុប)៖ `/setclass ឈ្មោះថ្នាក់`"
+        "🔗 ភ្ជាប់គ្រុបថ្នាក់រៀនអូតូ ៖ `/setclass ឈ្មោះថ្នាក់`"
     )
     
     markup = types.InlineKeyboardMarkup(row_width=2)
     
     # 🎛️ 💡 កែសម្រួល៖ តម្រឹម callback_data ឱ្យត្រូវគ្នាជាមួយកូដ admin_handlers.py បេះបិទ
     btn_stats = types.InlineKeyboardButton("📊 មហារបាយការណ៍រួម", callback_data="school_stats")
-    btn_analytics = types.InlineKeyboardButton("📈 อត្រាប្រគល់កិច្ចការ", callback_data="hw_analytics")
+    btn_analytics = types.InlineKeyboardButton("📈 អត្រាប្រគល់កិច្ចការ", callback_data="hw_analytics")
     
     btn_classes = types.InlineKeyboardButton("🏫 បញ្ជីថ្នាក់រៀន", callback_data="list_classes")
     btn_teachers = types.InlineKeyboardButton("👨‍🏫 បញ្ជីលោកគ្រូ-អ្នកគ្រូ", callback_data="list_teachers")
     
     btn_depts = types.InlineKeyboardButton("🏢 បញ្ជីដេប៉ាតាម៉ង់", callback_data="list_depts")
-    btn_subjects = types.InlineKeyboardButton("📚 មុខវិជ្ជាតាមផ្នែក", callback_data="adm_dept_subjects") # ប្រព័ន្ធចាស់
+    btn_subjects = types.InlineKeyboardButton("📚 មុខវិជ្ជាតាមផ្នែក", callback_data="list_depts") 
     
     btn_checkreq = types.InlineKeyboardButton("🔍 សិស្សចុះឈ្មោះថ្មី", callback_data="checkreq")
     btn_approve = types.InlineKeyboardButton("🟢 អនុម័ត (Approve) សិស្ស", callback_data="approve")
@@ -111,8 +110,11 @@ def send_admin_panel(bot, chat_id):
     markup.add(btn_grade, btn_notice)
     markup.add(btn_discipline)
     
-    # 📤 បាញ់ចេញសារផ្ទាំងបញ្ជារហ័សទៅឱ្យលោកនាយក
-    bot.send_message(chat_id, admin_msg, reply_markup=markup)
+    # 📤 ១. បាញ់ចេញផ្ទាំង Dashboard និងគ្រាប់ចុច Inline Markup
+    bot.send_message(chat_id, admin_msg, reply_markup=markup, parse_mode='Markdown')
+    
+    # 📤 ២. ផ្ញើសារប្រាប់ថាប្រព័ន្ធដំណើរការរួចរាល់ (លុបចោល reply_markup=admin_menu() ដែលបង្កកូដគាំងចោលស្អាតបាត)
+    bot.send_message(chat_id, "🎛️ **ផ្ទាំងបញ្ជាគ្រាប់ចុចរហ័ស (Admin Panel Loaded Successfully)**")
 
 # ========================================================
 # 🔔 ប្រព័ន្ធបាញ់សារដំណឹង (Notification)
