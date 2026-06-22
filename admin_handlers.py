@@ -1686,10 +1686,11 @@ def register_admin_teacher_handlers(bot, supabase):
                             class_analytics[c_level]["actual_submissions"] += 1
 
             # 🟢 ៤. រៀបចំសាររបាយការណ៍លទ្ធផលផ្ញើជូន Admin
+           # 🟢 ៤. រៀបចំសាររបាយការណ៍លទ្ធផលផ្ញើជូន Admin (ទម្រង់សុវត្ថិភាពខ្ពស់)
             report_msg = (
                 "📊 **[ របាយការណ៍វិភាគកិច្ចការផ្ទះ (Homework Analytics) ]**\n"
                 f"📆 *ប្រព័ន្ធធ្វើបច្ចុប្បន្នភាព៖ {datetime.now().strftime('%d-%m-%Y %H:%M')}*\n"
-                f"----------------------------------------\n\n"
+                "----------------------------------------\n\n"
             )
 
             for c_level, data in sorted(class_analytics.items()):
@@ -1713,8 +1714,8 @@ def register_admin_teacher_handlers(bot, supabase):
                 )
 
             report_msg += (
-                f"----------------------------------------\n"
-                "💡 _កំណត់សម្គាល់៖_\n"
+                "----------------------------------------\n"
+                "💡 **កំណត់សម្គាល់៖**\n"
                 "🟢 ឧស្សាហ៍ (>=80%) | 🟡 មធ្យម (50-79%) | 🔴 ខ្ជិល (<50%)"
             )
 
