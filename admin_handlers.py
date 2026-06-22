@@ -77,35 +77,59 @@ def register_admin_teacher_handlers(bot, supabase):
             print(f"❌ Admin Login Error: {e}")
             bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
 
-
-    # ========================================================
-    # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង Inline លើ Admin Dashboard (កែសម្រួលឱ្យហៅ Wizard)
-    # ========================================================
-    @bot.callback_query_handler(func=lambda call: call.data.startswith('adm_guide_'))
+# ===================================================================================
+    # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង Inline លើ Admin Dashboard (ជួសជុលការចុចមិនដើរ)
+    # ===================================================================================
+    @bot.callback_query_handler(func=lambda call: call.data in [
+        "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
+        "addstu", "adddiscipline", "grade", "addnotice", "addteacher", "checkreq", "approve",
+        "adm_guide_stats", "adm_guide_analytics", "adm_guide_addstu", "adm_guide_discipline",
+        "adm_guide_grade", "adm_guide_notice", "adm_guide_addteacher", "adm_guide_checkreq", "adm_guide_approve"
+    ])
     def handle_admin_panel_inline_clicks(call):
         chat_id = call.message.chat.id
         action = call.data
         
-        if action == "adm_guide_stats":
-            school_stats_command(call.message)
-        elif action == "adm_guide_analytics":
-            hw_analytics_command(call.message)
-        elif action == "adm_guide_addstu":
-            add_student_wizard(call.message)
-        elif action == "adm_guide_discipline":
-            add_discipline_wizard(call.message)
-        elif action == "adm_guide_grade":
-            grade_homework_wizard(call.message)
-        elif action == "adm_guide_notice":
-            add_notice_wizard(call.message)
-        elif action == "adm_guide_addteacher":
-            add_teacher_wizard(call.message)
-        elif action == "adm_guide_checkreq":
-            check_requests_command(call.message)
-        elif action == "adm_guide_approve":
-            bot.send_message(chat_id, "🟢 **[ របៀបអនុម័ត / Approve សិស្ស ]**\nសូមវាយបញ្ជា៖ `/approve លេខTelegramID, លេខIDសិស្ស`", parse_mode='Markdown')
+        try:
+            # 🔒 ឆែកសិទ្ធិការពារ Admin
+            user_id = call.from_user.id
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
+                return
+
+            # 📊 ឆែកហៅមុខងារផ្នែកស្ថិតិ និងបញ្ជី
+            if action in ["school_stats", "adm_guide_stats"]:
+                school_stats_command(call.message)
+            elif action in ["hw_analytics", "adm_guide_analytics"]:
+                hw_analytics_command(call.message)
+            elif action == "list_classes":
+                list_classes_command(call.message)
+            elif action == "list_teachers":
+                list_teachers_command(call.message)
+            elif action == "list_depts":
+                list_depts_command(call.message)
+                
+            # 👤 ឆែកហៅប្រព័ន្ធ Wizard សួរនាំលឿន
+            elif action in ["addstu", "adm_guide_addstu"]:
+                add_student_wizard(call.message)
+            elif action in ["adddiscipline", "adm_guide_discipline"]:
+                add_discipline_wizard(call.message)
+            elif action in ["grade", "adm_guide_grade"]:
+                grade_homework_wizard(call.message)
+            elif action in ["addnotice", "adm_guide_notice"]:
+                add_notice_wizard(call.message)
+            elif action in ["addteacher", "adm_guide_addteacher"]:
+                add_teacher_wizard(call.message)
+            elif action in ["checkreq", "adm_guide_checkreq"]:
+                check_requests_command(call.message)
+            elif action in ["approve", "adm_guide_approve"]:
+                bot.send_message(chat_id, "🟢 **[ របៀបអនុម័ត / Approve សិស្ស ]**\nសូមវាយបញ្ជា៖ `/approve លេខTelegramID, លេខIDសិស្ស`", parse_mode='Markdown')
+                
+            bot.answer_callback_query(call.id)
             
-        bot.answer_callback_query(call.id)
+        except Exception as e:
+            bot.answer_callback_query(call.id, f"❌ កំហុសប៊ូតុង៖ {e}", show_alert=True)
 
 
     # ========================================================
