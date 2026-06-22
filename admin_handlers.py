@@ -78,16 +78,16 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
 
 # ===================================================================================
-    # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline ទាំងអស់ (ទម្រង់មហាចាប់ ការពារការគាំងស្ងាត់)
+    # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
     # ===================================================================================
-    @bot.callback_query_handler(func=lambda call: True) # ចាប់រាល់សកម្មភាពចុចប៊ូតុងទាំងអស់
+    @bot.callback_query_handler(func=lambda call: True)
     def handle_all_system_inline_clicks(call):
         chat_id = call.message.chat.id
         action = call.data
         user_id = call.from_user.id
         
         try:
-            # 🟢 បើជាប៊ូតុងរបស់សិស្ស/គ្រូដែលផ្ដើមដោយពាក្យ 'grh_' ឬ 'view_' គឺឱ្យរត់ទៅ Function រៀងៗខ្លួន
+            # 🟢 ១. បើជាប៊ូតុងរបស់សិស្ស/គ្រូ គឺឱ្យរត់ទៅ Function រៀងៗខ្លួនភ្លាមៗ
             if action.startswith('view_students:'):
                 callback_view_students(call)
                 return
@@ -101,32 +101,34 @@ def register_admin_teacher_handlers(bot, supabase):
                 handle_grade_button_click(call)
                 return
             elif action.startswith('ack_'):
-                # ប៊ូតុងទទួលដឹងឮសេចក្ដីប្រកាស
                 bot.answer_callback_query(call.id, "✅ លោកអ្នកបានចុចទទួលដឹងឮរួចរាល់!", show_alert=True)
                 return
 
-            # 🔒 បើចុចចំប៊ូតុង Dashboard របស់ Admin គឺត្រូវឆែកសិទ្ធិការពារជាមុនសិន
+            # 🔒 ២. បើចុចចំប៊ូតុង Dashboard របស់ Admin
             if action in [
                 "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
                 "addstu", "adddiscipline", "grade", "addnotice", "addteacher", "checkreq", "approve",
                 "adm_guide_stats", "adm_guide_analytics", "adm_guide_addstu", "adm_guide_discipline",
                 "adm_guide_grade", "adm_guide_notice", "adm_guide_addteacher", "adm_guide_checkreq", "adm_guide_approve"
             ]:
-                user_check = supabase.table("users").select("role").eq("telegram_id", int(user_id)).execute()
                 is_valid_admin = False
-                if user_check.data and user_check.data[0].get('role') == 'ADMIN':
+                
+                # 🔄 ជំហានទី ១៖ រត់ទៅឆែកមើលក្នុងតារាង "admins" ថាជា SUPER_ADMIN ឬ ADMIN ឬទេ (បង្ខំប្រភេទលេខ int)
+                admin_check = supabase.table("admins").select("role").eq("telegram_id", int(user_id)).execute()
+                if admin_check.data and admin_check.data[0].get('role') in ['SUPER_ADMIN', 'ADMIN']:
                     is_valid_admin = True
                 else:
-                    # ឆែកបម្រុងជា String
-                    backup_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
-                    if backup_check.data and backup_check.data[0].get('role') == 'ADMIN':
+                    # 🔄 ជំហានទី ២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users" ក្រែងលោគាត់ដេកនៅទីនោះ
+                    user_check = supabase.table("users").select("role").eq("telegram_id", int(user_id)).execute()
+                    if user_check.data and user_check.data[0].get('role') in ['SUPER_ADMIN', 'ADMIN']:
                         is_valid_admin = True
 
+                # ❌ បើឆែកដាតាបេសទាំង ២ តារាងហើយ នៅតែមិនមែនជា Admin គឺបដិសេធសិទ្ធិ
                 if not is_valid_admin:
                     bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
                     return
 
-                # 📊 ហៅមុខងារតាមគ្រាប់ចុចនីមួយៗ
+                # 📊 ៣. ដំណើរការហៅមុខងារ Wizard តាមគ្រាប់ចុចនៅពេលដាតាបេសអនុញ្ញាត
                 if action in ["school_stats", "adm_guide_stats"]: school_stats_command(call.message)
                 elif action in ["hw_analytics", "adm_guide_analytics"]: hw_analytics_command(call.message)
                 elif action == "list_classes": list_classes_command(call.message)
@@ -144,7 +146,7 @@ def register_admin_teacher_handlers(bot, supabase):
                 bot.answer_callback_query(call.id)
 
         except Exception as e:
-            bot.answer_callback_query(call.id, f"❌ កំហុស៖ {e}", show_alert=True)
+            bot.answer_callback_query(call.id, f"❌ កំហុសប្រព័ន្ធប៊ូតុង៖ {e}", show_alert=True)
 
 
     # ========================================================
