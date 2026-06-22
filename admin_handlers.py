@@ -696,14 +696,12 @@ def register_admin_teacher_handlers(bot, supabase):
 
         sent_msg = bot.send_message(chat_id, "➕ **[បង្កើតគណនីគ្រូ - ជំហាន ១/៣]** សូមបំពេញ **ID គ្រូ** (ឧទាហរណ៍៖ TCH001)៖")
         bot.register_next_step_handler(sent_msg, process_tch_id)
-
-    def process_tch_id(message):
+​    def process_tch_id(message):
         chat_id = message.chat.id
         tch_id = message.text.strip()
         sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះលោកគ្រូ-អ្នកគ្រូ** ៖")
         bot.register_next_step_handler(sent_msg, process_tch_name, tch_id)
-​    
-    def process_tch_final(message, tch_id, tch_name):
+​      def process_tch_final(message, tch_id, tch_name):
         chat_id = message.chat.id
         pwd = message.text.strip()
         try:
@@ -727,10 +725,7 @@ def register_admin_teacher_handlers(bot, supabase):
                 bot.send_message(chat_id, "❌ បរាជ័យ៖ ដាតាបេសបដិសេធការរក្សាទុក។")
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
-
-
-
-    # ========================================================
+# ========================================================
     # 🏢 មុខងារ៖ ថែមផ្នែកឱ្យគ្រូ (/adddept) - ទម្រង់ Wizard Steps
     # ========================================================
     @bot.message_handler(commands=['adddept'])
