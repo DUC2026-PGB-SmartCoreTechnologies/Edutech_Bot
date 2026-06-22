@@ -709,7 +709,7 @@ def register_admin_teacher_handlers(bot, supabase):
         sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ៣/៣]** សូមកំណត់ **លេខសម្ងាត់ (Password)** សម្រាប់គ្រូ៖")
         bot.register_next_step_handler(sent_msg, process_tch_final, tch_id, tch_name)
 
- def process_tch_final(message, tch_id, tch_name):
+ ​​​​   def process_tch_final(message, tch_id, tch_name):
         chat_id = message.chat.id
         pwd = message.text.strip()
         try:
