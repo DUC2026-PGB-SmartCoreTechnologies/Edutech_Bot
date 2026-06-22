@@ -1550,6 +1550,68 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ Add Holiday & Broadcast Error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
+            # ===================================================================================
+    # 📊 មុខងារ៖ Admin វាយ /school_stats ដើម្បីមើលស្ថិតិសរុបនៃសាលារៀន (DUC Metrics)
+    # ===================================================================================
+    @bot.message_handler(commands=['school_stats'])
+    def school_stats_command(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
+        try:
+            # 🔒 ១. ឆែកសិទ្ធិ Admin
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិមើលទិន្នន័យនេះឡើយ។")
+                return
+
+            bot.send_message(chat_id, "⏳ **កំពុងប្រមូលទិន្នន័យ និងគណនាស្ថិតិរួមពី Supabase...**")
+
+            # 🔎 ២. រត់ទៅរាប់ទិន្នន័យពីគ្រប់តារាងស្នូល (Count Data)
+            # រាប់ចំនួនសិស្សសរុប
+            students_res = supabase.table("students").select("student_id", count="exact").execute()
+            total_students = students_res.count if students_res.count is not None else 0
+
+            # រាប់ចំនួនលោកគ្រូ-អ្នកគ្រូ
+            teachers_res = supabase.table("teachers").select("teacher_id", count="exact").execute()
+            total_teachers = teachers_res.count if teachers_res.count is not None else 0
+
+            # រាប់ចំនួនកាលវិភាគ/ថ្នាក់រៀនប្លែកៗគ្នា
+            schedules_res = supabase.table("schedules").select("class_level").execute()
+            distinct_classes = set()
+            if schedules_res.data:
+                for sch in schedules_res.data:
+                    if sch.get('class_level'):
+                        distinct_classes.add(sch['class_level'].strip().upper())
+            total_classes = len(distinct_classes)
+
+            # រាប់ចំនួនផ្នែក/ដេប៉ាតាម៉ង់
+            dept_res = supabase.table("departments").select("id", count="exact").execute()
+            total_depts = dept_res.count if dept_res.count is not None else 0
+
+            # រាប់ចំនួនសេចក្ដីជូនដំណឹងដែលបានបាញ់ប្រកាស
+            notices_res = supabase.table("school_notices").select("id", count="exact").execute()
+            total_notices = notices_res.count if notices_res.count is not None else 0
+
+            # 🟢 ៣. រៀបចំសាររបាយការណ៍ស្អាតៗផ្ញើជូន Admin
+            stats_msg = (
+                "📊 **[ របាយការណ៍ស្ថិតិរួមរបស់សាលា DUC ]**\n"
+                f"📆 *គិតត្រឹមថ្ងៃទី៖ {datetime.now().strftime('%d-%m-%Y')}*\n"
+                f"----------------------------------------\n\n"
+                f"👨‍🎓 **សិស្សានុសិស្សសរុប៖** `{total_students}` នាក់\n"
+                f"👨‍🏫 **លោកគ្រូ-អ្នកគ្រូសរុប៖** `{total_teachers}` នាក់\n"
+                f"🏫 **ថ្នាក់រៀនសកម្មសរុប៖** `{total_classes}` ថ្នាក់\n"
+                f"🏢 **ដេប៉ាតាម៉ង់/ផ្នែកសរុប៖** `{total_depts}` ផ្នែក\n"
+                f"📢 **សេចក្ដីប្រកាសដែលបានផ្សាយ៖** `{total_notices}` លើក\n\n"
+                f"----------------------------------------\n"
+                "📈 _ទិន្នន័យត្រូវបានធ្វើបច្ចុប្បន្នភាពអូតូពីប្រព័ន្ធ API Core Engine_"
+            )
+
+            bot.send_message(chat_id, stats_msg, parse_mode='Markdown')
+
+        except Exception as e:
+            print(f"❌ School Stats Error: {e}")
+            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
             
             
     
