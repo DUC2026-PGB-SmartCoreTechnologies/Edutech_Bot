@@ -1613,8 +1613,7 @@ def register_admin_teacher_handlers(bot, supabase):
             print(f"❌ School Stats Error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
             # ===================================================================================
-    
-# ===================================================================================
+    # ===================================================================================
     # 🏫 បញ្ជីទី ១៖ Admin វាយ /list_classes រាយឈ្មោះថ្នាក់ និងបង្កើតប៊ូតុងចុចអូតូ
     # ===================================================================================
     @bot.message_handler(commands=['list_classes'])
@@ -1656,7 +1655,7 @@ def register_admin_teacher_handlers(bot, supabase):
             
             bot.send_message(chat_id, msg, reply_markup=markup)
         except Exception as e:
-            bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
+            bot.send_message(chat_id, f"❌ កំហុសបច្គេកទេស៖ {e}")
 
     # ===================================================================================
     # 🏢 បញ្ជីទី ២៖ Admin វាយ /list_depts រាយឈ្មោះផ្នែក និងបង្កើតប៊ូតុងចុចអូតូ
@@ -1669,7 +1668,7 @@ def register_admin_teacher_handlers(bot, supabase):
         try:
             user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
             if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ。")
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
                 return
 
             dept_res = supabase.table("departments").select("id", "department_name").execute()
@@ -1686,7 +1685,8 @@ def register_admin_teacher_handlers(bot, supabase):
             msg += "👇 លោកអ្នកអាចចុចលើប៊ូតុងខាងក្រោម ដើម្បីមើលមុខវិជ្ជាសកម្មក្នុងផ្នែកនីមួយៗ៖"
 
             markup = types.InlineKeyboardMarkup(row_width=1)
-            btn_list = [types.InlineKeyboardButton(f"🏢 {d.get('department_name')}", callback_data=f"view_dept:{d.get('id')}:{d.get('department_name')}") for d in dept_res.data]
+            # 💡 កែសម្រួល៖ បោះទៅតែ ID សុទ្ធ (view_dept:<id>) ដើម្បីកុំឱ្យវែងហួសកំណត់ 64 Bytes របស់ Telegram
+            btn_list = [types.InlineKeyboardButton(f"🏢 {d.get('department_name')}", callback_data=f"view_dept:{d.get('id')}") for d in dept_res.data]
             markup.add(*btn_list)
             
             bot.send_message(chat_id, msg, reply_markup=markup)
@@ -1730,10 +1730,10 @@ def register_admin_teacher_handlers(bot, supabase):
 
 
     # ====================================================================================================
-    # 📡 ៤. ផ្ទាំងប្រមូលផ្ដុំគ្រាប់ចាប់សកម្មភាពចុចប៊ូតុងទាំងអស់ (ALL CALLBACK HANDLERS - ដាក់បាតក្រោមគេបង្អស់)
+    # 📡 ៤. ផ្ទាំងប្រមូលផ្ដុំគ្រាប់ចាប់សកម្មភាពចុចប៊ូតុងទាំងអស់ (ALL CALLBACK HANDLERS)
     # ====================================================================================================
     
-    # 📡 ៤.១ ចាប់សកម្មភាពពេលចុចមើល «សិស្សក្នុងថ្នាក់»
+    # 📡 ៤.១ ចាប់សកម្មភាពពេលចុចមើល «សិស្សក្នុងថ្នាក់» (កែសម្រួលជួរឈរ name រួចរាល់)
     @bot.callback_query_handler(func=lambda call: call.data.startswith('view_students:'))
     def callback_view_students(call):
         chat_id = call.message.chat.id
@@ -1747,7 +1747,9 @@ def register_admin_teacher_handlers(bot, supabase):
             target_class = call.data.split(':', 1)[1]
             bot.answer_callback_query(call.id, f"កំពុងទាញទិន្នន័យថ្នាក់ {target_class}...")
 
-            students_res = supabase.table("students").select("student_id", "full_name", "gender").eq("class_level", target_class).execute()
+            # 🟢 កែតម្រូវចំៗ៖ ហៅជួរឈរ "name" តាមរចនាសម្ព័ន្ធពិតប្រាកដរបស់ដាតាបេសបង
+            students_res = supabase.table("students").select("student_id", "name", "gender").eq("class_level", target_class).execute()
+            
             if not students_res.data:
                 bot.send_message(chat_id, f"ℹ️ មិនទាន់មានសិស្សចុះឈ្មោះក្នុងថ្នាក់ '{target_class}' នៅឡើយទេ។")
                 return
@@ -1757,13 +1759,14 @@ def register_admin_teacher_handlers(bot, supabase):
             msg += "========================================\n"
             for i, stu in enumerate(students_res.data, 1):
                 g_kh = "ប្រុស" if stu.get('gender', '').upper() == 'M' else "ស្រី" if stu.get('gender', '').upper() == 'F' else stu.get('gender')
-                msg += f"{i}. ID: {stu.get('student_id')} | ឈ្មោះ: {stu.get('full_name')} ({g_kh})\n"
+                # 🟢 ទាញយកតម្លៃពីគ្រាប់ចុច 'name'
+                msg += f"{i}. ID: {stu.get('student_id')} | ឈ្មោះ: {stu.get('name')} ({g_kh})\n"
             msg += "========================================\n"
             bot.send_message(chat_id, msg)
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
 
-    # 📡 ៤.២ ចាប់សកម្មភាពពេលចុចមើល «មុខវិជ្ជាតាមដេប៉ាតាម៉ង់»
+    # 📡 ៤.២ ចាប់សកម្មភាពពេលចុចមើល «មុខវិជ្ជាតាមដេប៉ាតាម៉ង់» (ដោះស្រាយប្រវែង 64 Bytes)
     @bot.callback_query_handler(func=lambda call: call.data.startswith('view_dept:'))
     def callback_view_dept(call):
         chat_id = call.message.chat.id
@@ -1774,7 +1777,12 @@ def register_admin_teacher_handlers(bot, supabase):
                 bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ!", show_alert=True)
                 return
 
-            _, dept_id, dept_name = call.data.split(':', 2)
+            target_dept_id = call.data.split(':', 1)[1]
+            
+            # ទាញយកឈ្មោះផ្នែកពី Supabase មកវិញដោយប្រើ ID ដើម្បីកុំឱ្យវែងហួសកំណត់របស់ Telegram
+            dept_info = supabase.table("departments").select("department_name").eq("id", target_dept_id).execute()
+            dept_name = dept_info.data[0].get('department_name', 'មិនមានឈ្មោះ') if dept_info.data else "ផ្នែកទូទៅ"
+            
             bot.answer_callback_query(call.id, f"កំពុងទាញទិន្នន័យ {dept_name}...")
 
             hw_res = supabase.table("homework").select("subject_name").execute()
@@ -1839,6 +1847,8 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, msg)
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
+
+   
      # ===================================================================================
     # 📊 មុខងារ៖ Admin វាយ /hw_analytics ដើម្បីមើលអត្រាប្រគល់កិច្ចការផ្ទះរបស់សិស្សតាមថ្នាក់
     # ===================================================================================
