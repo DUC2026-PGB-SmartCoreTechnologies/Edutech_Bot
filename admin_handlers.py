@@ -1739,6 +1739,105 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្គេកទេស៖ {e}")
             # ===================================================================================
+    # 👨‍🏫 មុខងារទី ៤៖ Admin វាយ /list_teachers ដើម្បីរាយឈ្មោះលោកគ្រូ-អ្នកគ្រូទាំងអស់
+    # ===================================================================================
+    @bot.message_handler(commands=['list_teachers'])
+    def list_teachers_command(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
+        try:
+            # 🔒 ឆែកសិទ្ធិ Admin
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                return
+
+            # ទាញយកទិន្នន័យលោកគ្រូ-អ្នកគ្រូទាំងអស់ពី Supabase
+            teachers_res = supabase.table("teachers").select("teacher_id", "full_name").execute()
+            
+            if not teachers_res.data:
+                bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យលោកគ្រូ-អ្នកគ្រូនៅក្នុងប្រព័ន្ធឡើយ។")
+                return
+
+            msg = f"👨‍🏫 [ បញ្ជីឈ្មោះលោកគ្រូ-អ្នកគ្រូសរុប៖ {len(teachers_res.data)} នាក់ ]\n"
+            msg += "========================================\n"
+            for i, t in enumerate(teachers_res.data, 1):
+                t_id = t.get('teacher_id', 'N/A')
+                t_name = t.get('full_name', 'មិនមានឈ្មោះ')
+                msg += f"{i}. ID: {t_id} | លោកគ្រូ-អ្នកគ្រូ៖ {t_name}\n"
+            msg += "========================================\n"
+            
+            bot.send_message(chat_id, msg)
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
+
+
+    # ===================================================================================
+    # 📚 មុខងារទី ៥៖ Admin វាយ /dept_subjects ដើម្បីរាយឈ្មោះមុខវិជ្ជាបំបែកតាមដេប៉ាតាម៉ង់
+    # ===================================================================================
+    @bot.message_handler(commands=['dept_subjects'])
+    def dept_subjects_command(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
+        try:
+            # 🔒 ឆែកសិទ្ធិ Admin
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                return
+
+            bot.send_message(chat_id, "⏳ កំពុងចម្រាញ់ទិន្នន័យមុខវិជ្ជាតាមដេប៉ាតាម៉ង់...")
+
+            # ទាញយកទិន្នន័យដេប៉ាតាម៉ង់ និងមុខវិជ្ជាដែលមានក្នុងកិច្ចការផ្ទះ (Homework)
+            dept_res = supabase.table("departments").select("id", "department_name").execute()
+            hw_res = supabase.table("homework").select("subject_name", "teacher_id").execute()
+            
+            if not dept_res.data:
+                bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យដេប៉ាតាម៉ង់នៅក្នុងប្រព័ន្ធឡើយ។")
+                return
+
+            msg = "📚 [ បញ្ជីរាយឈ្មោះមុខវិជ្ជាសកម្ម បំបែកតាមផ្នែក ]\n"
+            msg += "========================================\n"
+
+            # ប្រសិនបើមានមុខវិជ្ជាដែលបានបង្កើតក្នុងតារាង Homework
+            if hw_res.data:
+                # ក្រុមមុខវិជ្ជាដែលប្លែកៗគ្នាដើម្បីកុំឱ្យជាន់ឈ្មោះគ្នា (Distinct Subjects)
+                distinct_subjects = set()
+                for hw in hw_res.data:
+                    if hw.get('subject_name'):
+                        distinct_subjects.add(hw['subject_name'].strip())
+                
+                # បង្ហាញបញ្ជីរួម និងបំបែកទៅតាមឈ្មោះផ្នែកនីមួយៗអូតូ
+                for idx, dept in enumerate(dept_res.data, 1):
+                    d_name = dept.get('department_name')
+                    msg += f"\n🏢 ផ្នែក៖ {d_name}\n"
+                    
+                    # ចាប់យកមុខវិជ្ជាណាដែលត្រូវនឹងផ្នែក (ឧទាហរណ៍៖ បើឈ្មោះផ្នែកមានពាក្យ 'ព័ត៌មានវិទ្យា' ឬ 'ភាសា')
+                    # ករណីចង់បង្ហាញមុខវិជ្ជាទាំងអស់ដែលកំពុងរត់ក្នុងដេប៉ាតាម៉ង់សាលា
+                    found_sub = False
+                    sub_idx = 1
+                    for sub in sorted(distinct_subjects):
+                        # លក្ខខណ្ឌឆ្លាតវៃ៖ ផ្គូផ្គងមុខវិជ្ជាទៅតាមផ្នែកដែលពាក់ព័ន្ធ
+                        if ("ព័ត៌មាន" in d_name and any(x in sub.lower() for x in ["it", "network", "code", "python", "database", "system"])) or \
+                           ("ភាសា" in d_name and any(x in sub.lower() for x in ["english", "ថ្នាក់", "ភាសា", "cambodian"])) or \
+                           ("រដ្ឋបាល" in d_name or "គណនេយ្យ" in d_name or idx == 1): # ផ្នែកទូទៅ ឬផ្នែកដំបូង
+                            msg += f"  └ {sub_idx}. មុខវិជ្ជា៖ {sub}\n"
+                            sub_idx += 1
+                            found_sub = True
+                    
+                    if not found_sub:
+                        msg += "  └ (មិនទាន់មានមុខវិជ្ជាដំឡើងក្នុងផ្នែកនេះឡើយ)\n"
+            else:
+                msg += "ℹ️ មិនទាន់មានមុខវិជ្ជាសកម្មក្នុងតារាងកិច្ចការផ្ទះនៅឡើយទេ។\n"
+
+            msg += "========================================\n"
+            
+            bot.send_message(chat_id, msg)
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
+            # ===================================================================================
     # 📊 មុខងារ៖ Admin វាយ /hw_analytics ដើម្បីមើលអត្រាប្រគល់កិច្ចការផ្ទះរបស់សិស្សតាមថ្នាក់
     # ===================================================================================
     @bot.message_handler(commands=['hw_analytics'])
