@@ -1694,7 +1694,7 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
 
     # ===================================================================================
-    # 👨‍🏫 បញ្ជីទី ៣៖ Admin វាយ /list_teachers រាយឈ្មោះគ្រូ និងបង្កើតប៊ូតុងចុចអូតូ
+    # 👨‍🏫 បញ្ជីទី ៣៖ Admin វាយ /list_teachers រាយឈ្មោះគ្រូ និងបង្កើតប៊ូតុងចុចអូតូ (កែសម្រួល name)
     # ===================================================================================
     @bot.message_handler(commands=['list_teachers'])
     def list_teachers_command(message):
@@ -1707,7 +1707,8 @@ def register_admin_teacher_handlers(bot, supabase):
                 bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
                 return
 
-            teachers_res = supabase.table("teachers").select("teacher_id", "full_name").execute()
+            # 🟢 កែតម្រូវ៖ ដូរពី 'full_name' មក 'name'
+            teachers_res = supabase.table("teachers").select("teacher_id", "name").execute()
             
             if not teachers_res.data:
                 bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យលោកគ្រូ-អ្នកគ្រូនៅក្នុងប្រព័ន្ធឡើយ។")
@@ -1716,18 +1717,19 @@ def register_admin_teacher_handlers(bot, supabase):
             msg = f"👨‍🏫 [ បញ្ជីឈ្មោះលោកគ្រូ-អ្នកគ្រូសរុប៖ {len(teachers_res.data)} នាក់ ]\n"
             msg += "========================================\n"
             for i, t in enumerate(teachers_res.data, 1):
-                msg += f"{i}. ID: {t.get('teacher_id')} | លោកគ្រូ-អ្នកគ្រូ៖ {t.get('full_name')}\n"
+                # 🟢 ទាញយកពី 'name'
+                msg += f"{i}. ID: {t.get('teacher_id')} | លោកគ្រូ-អ្នកគ្រូ៖ {t.get('name')}\n"
             msg += "========================================\n"
             msg += "👇 លោកអ្នកអាចចុចលើប៊ូតុងខាងក្រោម ដើម្បីមើលព័ត៌មានលម្អិតរបស់គ្រូម្នាក់ៗ៖"
 
             markup = types.InlineKeyboardMarkup(row_width=2)
-            btn_list = [types.InlineKeyboardButton(f"👨‍🏫 {t.get('full_name')}", callback_data=f"view_teacher:{t.get('teacher_id')}") for t in teachers_res.data]
+            # 🟢 ទាញយកប៊ូតុងពី 'name'
+            btn_list = [types.InlineKeyboardButton(f"👨‍🏫 {t.get('name')}", callback_data=f"view_teacher:{t.get('teacher_id')}") for t in teachers_res.data]
             markup.add(*btn_list)
             
             bot.send_message(chat_id, msg, reply_markup=markup)
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
-
 
     # ====================================================================================================
     # 📡 ៤. ផ្ទាំងប្រមូលផ្ដុំគ្រាប់ចាប់សកម្មភាពចុចប៊ូតុងទាំងអស់ (ALL CALLBACK HANDLERS)
@@ -1809,7 +1811,7 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
 
-    # 📡 ៤.៣ ចាប់សកម្មភាពពេលចុចមើល «ប្រវត្តិរូប និងបន្ទុករបស់គ្រូ»
+   # 📡 ៤.៣ ចាប់សកម្មភាពពេលចុចមើល «ប្រវត្តិរូប និងបន្ទុករបស់គ្រូ» (កែសម្រួល name)
     @bot.callback_query_handler(func=lambda call: call.data.startswith('view_teacher:'))
     def callback_view_teacher(call):
         chat_id = call.message.chat.id
@@ -1834,7 +1836,8 @@ def register_admin_teacher_handlers(bot, supabase):
             msg = "📋 [ ព័ត៌មានលម្អិតរបស់លោកគ្រូ-អ្នកគ្រូ ]\n"
             msg += "========================================\n"
             msg += f"🆔 អត្តសញ្ញាណ ID៖ {t_data.get('teacher_id')}\n"
-            msg += f"👤 នាមនិងគោត្តនាម៖ {t_data.get('full_name')}\n"
+            # 🟢 កែតម្រូវ៖ ដូរពី 'full_name' មក 'name'
+            msg += f"👤 នាមនិងគោត្តនាម៖ {t_data.get('name')}\n"
             msg += f"📞 លេខទូរស័ព្ទ៖ {t_data.get('phone', 'N/A')}\n"
             msg += "----------------------------------------\n"
             msg += "🏫 បន្ទុកថ្នាក់ និងមុខវិជ្ជាបង្រៀន៖\n"
