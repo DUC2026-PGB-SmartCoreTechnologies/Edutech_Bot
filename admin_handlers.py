@@ -716,22 +716,31 @@ def register_admin_teacher_handlers(bot, supabase):
         sent_msg = bot.send_message(chat_id, f"🆔 ID គ្រូ៖ `{tch_id}`\n👤 ឈ្មោះ៖ `{tch_name}`\n\n👉 **[ជំហាន ៣/៣]** សូមកំណត់ **លេខសម្ងាត់ (Password)** សម្រាប់គ្រូ៖")
         bot.register_next_step_handler(sent_msg, process_tch_final, tch_id, tch_name)
 
-    def process_tch_final(message, tch_id, tch_name):
+   def process_tch_final(message, tch_id, tch_name):
         chat_id = message.chat.id
         pwd = message.text.strip()
         
         try:
-            # 🔍 🔒 របាំងការពារជាន់គ្នាទី ២ (ចុងក្រោយ)
+            # 🔍 🔒 ជាន់ការពារ៖ ឆែកមើល ID គ្រូម្ដងទៀត ការពារការជាន់គ្នា
             check_exist = supabase.table("teachers").select("teacher_id").eq("teacher_id", tch_id).execute()
             if check_exist.data:
-                bot.send_message(chat_id, f"❌ **ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ!** សូមចាប់ផ្ដើមឡើងវិញបាទ។")
+                bot.send_message(chat_id, f"❌ **ការបង្កើតត្រូវបានបដិសេធ៖** ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ លោកនាយក! សូមវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញ។")
                 return
                 
-            res_tch = supabase.table("teachers").insert({"teacher_id": tch_id, "name": tch_name, "password": pwd}).execute()
-            supabase.table("users").insert({"telegram_id": f"PENDING_{tch_id}", "role": "TEACHER", "status": "NEW"}).execute()
+            # 📥 រក្សាទុកទិន្នន័យចូលតារាង teachers តែមួយគត់ (ត្រឹមត្រូវតាម Schema DB បង ១០០%)
+            res_tch = supabase.table("teachers").insert({
+                "teacher_id": tch_id, 
+                "name": tch_name, 
+                "password": pwd
+            }).execute()
+            
+            # ❌ លុបប្លុក supabase.table("users").insert(...) ចាស់ដែលបង្កកំហុស type bigint ចោលដាច់ស្រឡះ
             
             if res_tch.data:
-                bot.send_message(chat_id, f"🟢 **បង្កើតគណនីគ្រូថ្មីជោគជ័យ!**\n--------------------------------------------------\n🆔 **ID គ្រូ៖** `{tch_id}`\n👤 **ឈ្មោះ៖** *{tch_name}*\n🔑 **លេខសម្ងាត់៖** `{pwd}`")
+                bot.send_message(chat_id, f"🟢 **បង្កើតគណនីគ្រូថ្មីជោគជ័យ!**\n--------------------------------------------------\n🆔 **ID គ្រូ៖** `{tch_id}`\n👤 **ឈ្មោះ៖** *{tch_name}*\n🔑 **លេខសម្ងាត់៖** `{pwd}`\n--------------------------------------------------\n💡 *លោកគ្រូ-អ្នកគ្រូអាចប្រើប្រាស់ ID និងលេខសម្ងាត់នេះ ដើម្បីវាយ `/tlogin` ចូលកាន់ប្រព័ន្ធបានភ្លាមៗបាទ!*")
+            else:
+                bot.send_message(chat_id, "❌ បរាជ័យ៖ ដាតាបេសបដិសេធការរក្សាទុក។")
+                
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
 # ========================================================
