@@ -5,6 +5,7 @@ import threading
 import time
 import os
 import logging
+from flask import Flask
 
 # 📥 ១. Import configuration និង API Client ពី config.py
 from config import supabase, TELEGRAM_TOKEN
