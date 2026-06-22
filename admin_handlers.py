@@ -78,7 +78,7 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
 
 # ===================================================================================
-    # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង Inline លើ Admin Dashboard (ជួសជុលការចុចមិនដើរ)
+    # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង Inline លើ Admin Dashboard (ជួសជុលបញ្ហាសិទ្ធិ BigInt)
     # ===================================================================================
     @bot.callback_query_handler(func=lambda call: call.data in [
         "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
@@ -91,9 +91,10 @@ def register_admin_teacher_handlers(bot, supabase):
         action = call.data
         
         try:
-            # 🔒 ឆែកសិទ្ធិការពារ Admin
+            # 🔒 💡 កែតម្រូវចំៗ៖ ប្ដូរទៅជា int(user_id) ដើម្បីឱ្យត្រូវគ្នានឹងប្រភេទ bigint ក្នុង Supabase
             user_id = call.from_user.id
-            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            user_check = supabase.table("users").select("role").eq("telegram_id", int(user_id)).execute()
+            
             if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
                 bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
                 return
