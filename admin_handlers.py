@@ -1613,6 +1613,132 @@ def register_admin_teacher_handlers(bot, supabase):
             print(f"❌ School Stats Error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
             # ===================================================================================
+    # 🏫 មុខងារទី ១៖ Admin វាយ /list_classes ដើម្បីរាយឈ្មោះថ្នាក់រៀនទាំងអស់ដែលមាន
+    # ===================================================================================
+    @bot.message_handler(commands=['list_classes'])
+    def list_classes_command(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
+        try:
+            # 🔒 ឆែកសិទ្ធិ Admin
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                return
+
+            # ទាញយកឈ្មោះថ្នាក់ពីតារាងសិស្ស និងកាលវិភាគដើម្បីបូកបញ្ចូលគ្នាឱ្យគ្រប់ជ្រុងជ្រោយ
+            students_res = supabase.table("students").select("class_level").execute()
+            schedules_res = supabase.table("schedules").select("class_level").execute()
+            
+            distinct_classes = set()
+            if students_res.data:
+                for s in students_res.data:
+                    if s.get('class_level'): distinct_classes.add(s['class_level'].strip().upper())
+            if schedules_res.data:
+                for sch in schedules_res.data:
+                    if sch.get('class_level'): distinct_classes.add(sch['class_level'].strip().upper())
+
+            if not distinct_classes:
+                bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យថ្នាក់រៀននៅក្នុងប្រព័ន្ធឡើយ។")
+                return
+
+            msg = f"🏫 [ បញ្ជីឈ្មោះថ្នាក់រៀនសកម្មសរុប៖ {len(distinct_classes)} ថ្នាក់ ]\n"
+            msg += "========================================\n"
+            for i, c_name in enumerate(sorted(distinct_classes), 1):
+                msg += f"{i}. ថ្នាក់៖ {c_name}\n"
+            msg += "========================================\n"
+            msg += "💡 បងអាចវាយ៖ /class_students ឈ្មោះថ្នាក់ ដើម្បីមើលបញ្ជីឈ្មោះសិស្សក្នុងថ្នាក់នោះ។"
+            
+            bot.send_message(chat_id, msg)
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
+
+
+    # ===================================================================================
+    # 🏢 មុខងារទី ២៖ Admin វាយ /list_depts ដើម្បីរាយឈ្មោះដេប៉ាតាម៉ង់/ផ្នែកទាំងអស់
+    # ===================================================================================
+    @bot.message_handler(commands=['list_depts'])
+    def list_depts_command(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
+        try:
+            # 🔒 ឆែកសិទ្ធិ Admin
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                return
+
+            # ទាញយកទិន្នន័យពីតារាង departments
+            dept_res = supabase.table("departments").select("department_name").execute()
+            
+            if not dept_res.data:
+                bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យដេប៉ាតាម៉ង់/ផ្នែកនៅក្នុងប្រព័ន្ធឡើយ។")
+                return
+
+            msg = f"🏢 [ បញ្ជីឈ្មោះដេប៉ាតាម៉ង់/ផ្នែកសរុប៖ {len(dept_res.data)} ផ្នែក ]\n"
+            msg += "========================================\n"
+            for i, d in enumerate(dept_res.data, 1):
+                d_name = d.get('department_name', 'មិនមានឈ្មោះ')
+                msg += f"{i}. ផ្នែក៖ {d_name}\n"
+            msg += "========================================\n"
+            
+            bot.send_message(chat_id, msg)
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
+
+
+    # ===================================================================================
+    # 👨‍🎓 មុខងារទី ៣៖ Admin វាយ /class_students ឈ្មោះថ្នាក់ ដើម្បីរាយឈ្មោះសិស្សក្នុងថ្នាក់នោះ
+    # ===================================================================================
+    @bot.message_handler(commands=['class_students'])
+    def class_students_command(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
+        try:
+            # 🔒 ឆែកសិទ្ធិ Admin
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                return
+
+            # ចាប់យកឈ្មោះថ្នាក់ដែល Admin វាយចូលមក (ឧទាហរណ៍៖ /class_students 5_SPD)
+            parts = message.text.split(maxsplit=1)
+            if len(parts) < 2:
+                bot.reply_to(message, "⚠️ សូមបំពេញឈ្មោះថ្នាក់ផងបង! ឧទាហរណ៍៖ /class_students 5_SPD")
+                return
+            
+            target_class = parts[1].strip().upper()
+            
+            # ទាញយកបញ្ជីសិស្សដែលស្ថិតក្នុងថ្នាក់នោះពី Supabase
+            students_res = supabase.table("students").select("student_id", "full_name", "gender").eq("class_level", target_class).execute()
+            
+            if not students_res.data:
+                bot.send_message(chat_id, f"ℹ️ មិនទាន់មានសិស្សចុះឈ្មោះក្នុងថ្នាក់ '{target_class}' នេះនៅឡើយទេបាទ។")
+                return
+
+            msg = f"👨‍🎓 [ បញ្ជីឈ្មោះសិស្សានុសិស្សក្នុងថ្នាក់៖ {target_class} ]\n"
+            msg += f"📊 ចំនួនសិស្សសរុប៖ {len(students_res.data)} នាក់\n"
+            msg += "========================================\n"
+            
+            for i, stu in enumerate(students_res.data, 1):
+                stu_id = stu.get('student_id', 'N/A')
+                name = stu.get('full_name', 'មិនមានឈ្មោះ')
+                gender = stu.get('gender', 'N/A')
+                
+                # ប្ដូរអក្សរ M/F ឱ្យទៅជាភាសាខ្មែរ ប្រុស/ស្រី ដើម្បីងាយស្រួលមើល
+                gender_kh = "ប្រុស" if gender.upper() == 'M' else "ស្រី" if gender.upper() == 'F' else gender
+                
+                msg += f"{i}. ID: {stu_id} | ឈ្មោះ: {name} ({gender_kh})\n"
+                
+            msg += "========================================\n"
+            
+            bot.send_message(chat_id, msg)
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ កំហុសបច្គេកទេស៖ {e}")
+            # ===================================================================================
     # 📊 មុខងារ៖ Admin វាយ /hw_analytics ដើម្បីមើលអត្រាប្រគល់កិច្ចការផ្ទះរបស់សិស្សតាមថ្នាក់
     # ===================================================================================
     @bot.message_handler(commands=['hw_analytics'])
