@@ -709,16 +709,31 @@ def register_admin_teacher_handlers(bot, supabase):
         sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ៣/៣]** សូមកំណត់ **លេខសម្ងាត់ (Password)** សម្រាប់គ្រូ៖")
         bot.register_next_step_handler(sent_msg, process_tch_final, tch_id, tch_name)
 
-    def process_tch_final(message, tch_id, tch_name):
+   def process_tch_final(message, tch_id, tch_name):
         chat_id = message.chat.id
         pwd = message.text.strip()
         try:
-            res_tch = supabase.table("teachers").insert({"teacher_id": tch_id, "name": tch_name, "password": pwd}).execute()
-            supabase.table("users").insert({"telegram_id": f"PENDING_{tch_id}", "role": "TEACHER", "password": pwd}).execute()
+            # 🟢 ១. រក្សាទុកទិន្នន័យ ID, ឈ្មោះ និងលេខសម្ងាត់ ចូលតារាង teachers (ត្រឹមត្រូវតាម Schema DB បង)
+            res_tch = supabase.table("teachers").insert({
+                "teacher_id": tch_id, 
+                "name": tch_name, 
+                "password": pwd
+            }).execute()
+            
+            # 🟢 ២. បង្កើតគណនីរង់ចាំក្នុងតារាង users (លុបជួរ 'password' ចេញដាច់ខាត ការពារ Error PGRST204)
+            supabase.table("users").insert({
+                "telegram_id": f"PENDING_{tch_id}", 
+                "role": "TEACHER", 
+                "status": "NEW"
+            }).execute()
+            
             if res_tch.data:
-                bot.send_message(chat_id, f"🟢 **បង្កើតគណនីគ្រូថ្មីជោគជ័យ!**\n🆔 ID គ្រូ៖ {tch_id}\n👤 ឈ្មោះ៖ {tch_name}\n🔑 លេខសម្ងាត់៖ `{pwd}`")
+                bot.send_message(chat_id, f"🟢 **បង្កើតគណនីគ្រូថ្មីជោគជ័យ!**\n--------------------------------------------------\n🆔 **ID គ្រូ៖** `{tch_id}`\n👤 **ឈ្មោះ៖** *{tch_name}*\n🔑 **លេខសម្ងាត់៖** `{pwd}`")
+            else:
+                bot.send_message(chat_id, "❌ បរាជ័យ៖ ដាតាបេសបដិសេធការរក្សាទុក។")
         except Exception as e:
-            bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ `{e}`")
+            # 📢 ប្រសិនបើលោត Error ទៀត វានឹងប្រាប់ចំៗភ្លាម
+            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
 
 
     # ========================================================
