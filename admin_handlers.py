@@ -679,11 +679,9 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"🟢 **បន្ថែមថ្ងៃឈប់សម្រាកជោគជ័យ!**\n🎉 ឱកាស៖ `{name_kh}`\n📲 ផ្ញើទៅសមាជិក (Private)៖ `{count_private}` នាក់\n🏫 បាញ់ចូលគ្រុបថ្នាក់៖ `{count_group}` គ្រុប")
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
-
-
-    # ========================================================
-    # 👨‍🏫 មុខងារ៖ បង្កើតគណនីគ្រូថ្មី (/addteacher) - ទម្រង់ Wizard Steps
-    # ========================================================
+ # ===================================================================================
+    # 👨‍🏫 មុខងារ៖ បង្កើតគណនីគ្រូថ្មី (/addteacher) - ទម្រង់ Wizard Steps ពេញលេញ
+    # ===================================================================================
     @bot.message_handler(commands=['addteacher'])
     def add_teacher_wizard(message):
         chat_id = message.chat.id
@@ -696,56 +694,44 @@ def register_admin_teacher_handlers(bot, supabase):
 
         sent_msg = bot.send_message(chat_id, "➕ **[បង្កើតគណនីគ្រូ - ជំហាន ១/៣]** សូមបំពេញ **ID គ្រូ** (ឧទាហរណ៍៖ TCH001)៖")
         bot.register_next_step_handler(sent_msg, process_tch_id)
-​      def process_tch_id(message):
+
+    def process_tch_id(message):
         chat_id = message.chat.id
-        tch_id = message.text.strip().upper() # បម្លែងជាអក្សរធំអូតូ
+        tch_id = message.text.strip().upper()
         
         try:
-            # 🔍 🔒 ប្រព័ន្ធការពារជាន់គ្នា៖ រត់ទៅឆែកមើលក្នុង Supabase មុនគេបង្អស់
+            # 🔍 🔒 របាំងការពារជាន់គ្នាទី ១
             check_exist = supabase.table("teachers").select("teacher_id").eq("teacher_id", tch_id).execute()
-            
             if check_exist.data:
-                # 🛑 បើឆែកឃើញមាន ID នេះហើយ គឺកាត់ផ្ដាច់សៀគ្វី មិនឱ្យទៅជំហានបន្ទាប់ឡើយ
-                bot.send_message(chat_id, f"❌ **កំហុសបញ្ចូលទិន្នន័យ៖** លេខអត្តសញ្ញាណ ID គ្រូ `{tch_id}` នេះមាននៅក្នុងប្រព័ន្ធរួចរាល់ហើយបាទ!\n\n👉 សូមចុចប៊ូតុង ឬវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញជាមួយ ID ថ្មីបាទ។")
+                bot.send_message(chat_id, f"❌ **ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ!** សូមវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញ។")
                 return
-                
-        except Exception as e:
-            print(f"❌ Check Teacher ID Exist Error: {e}")
-            
-        # 🟢 បើឆ្លងផុតរបាំងការពារ (រកមិនឃើញ ID ជាន់) ទើបអនុញ្ញាតឱ្យទៅជំហានទី ២ សួររកឈ្មោះ
-        sent_msg = bot.send_message(chat_id, f"🆔 ID គ្រូដែលបានកំណត់៖ `{tch_id}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះលោកគ្រូ-អ្នកគ្រូ** ៖")
+        except Exception: pass
+
+        sent_msg = bot.send_message(chat_id, f"🆔 ID គ្រូ៖ `{tch_id}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះលោកគ្រូ-អ្នកគ្រូ** ៖")
         bot.register_next_step_handler(sent_msg, process_tch_name, tch_id)
-​      def process_tch_final(message, tch_id, tch_name):
+
+    def process_tch_name(message, tch_id):
+        chat_id = message.chat.id
+        tch_name = message.text.strip()
+        sent_msg = bot.send_message(chat_id, f"🆔 ID គ្រូ៖ `{tch_id}`\n👤 ឈ្មោះ៖ `{tch_name}`\n\n👉 **[ជំហាន ៣/៣]** សូមកំណត់ **លេខសម្ងាត់ (Password)** សម្រាប់គ្រូ៖")
+        bot.register_next_step_handler(sent_msg, process_tch_final, tch_id, tch_name)
+
+    def process_tch_final(message, tch_id, tch_name):
         chat_id = message.chat.id
         pwd = message.text.strip()
         
         try:
-            # 🔍 🔒 ជាន់ការពារចុងក្រោយ៖ ឆែកមើល ID គ្រូម្ដងទៀត ការពារករណីលោកនាយកវាយបន្តពីជំហានចាស់
+            # 🔍 🔒 របាំងការពារជាន់គ្នាទី ២ (ចុងក្រោយ)
             check_exist = supabase.table("teachers").select("teacher_id").eq("teacher_id", tch_id).execute()
-            
             if check_exist.data:
-                bot.send_message(chat_id, f"❌ **ការបង្កើតត្រូវបានបដិសេធ៖** ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ លោកនាយក! សូមវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញជាមួយ ID ថ្មីបាទ។")
+                bot.send_message(chat_id, f"❌ **ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ!** សូមចាប់ផ្ដើមឡើងវិញបាទ។")
                 return
                 
-            # 📥 បើអត់មានជាន់គ្នាទេ ទើបអនុញ្ញាតឱ្យរក្សាទុកចូលតារាង teachers 
-            res_tch = supabase.table("teachers").insert({
-                "teacher_id": tch_id, 
-                "name": tch_name, 
-                "password": pwd
-            }).execute()
-            
-            # បង្កើតគណនីរង់ចាំក្នុងតារាង users 
-            supabase.table("users").insert({
-                "telegram_id": f"PENDING_{tch_id}", 
-                "role": "TEACHER", 
-                "status": "NEW"
-            }).execute()
+            res_tch = supabase.table("teachers").insert({"teacher_id": tch_id, "name": tch_name, "password": pwd}).execute()
+            supabase.table("users").insert({"telegram_id": f"PENDING_{tch_id}", "role": "TEACHER", "status": "NEW"}).execute()
             
             if res_tch.data:
                 bot.send_message(chat_id, f"🟢 **បង្កើតគណនីគ្រូថ្មីជោគជ័យ!**\n--------------------------------------------------\n🆔 **ID គ្រូ៖** `{tch_id}`\n👤 **ឈ្មោះ៖** *{tch_name}*\n🔑 **លេខសម្ងាត់៖** `{pwd}`")
-            else:
-                bot.send_message(chat_id, "❌ បរាជ័យ៖ ដាតាបេសបដិសេធការរក្សាទុក។")
-                
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
 # ========================================================
