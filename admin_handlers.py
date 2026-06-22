@@ -709,18 +709,18 @@ def register_admin_teacher_handlers(bot, supabase):
         sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ៣/៣]** សូមកំណត់ **លេខសម្ងាត់ (Password)** សម្រាប់គ្រូ៖")
         bot.register_next_step_handler(sent_msg, process_tch_final, tch_id, tch_name)
 
-   def process_tch_final(message, tch_id, tch_name):
+ def process_tch_final(message, tch_id, tch_name):
         chat_id = message.chat.id
         pwd = message.text.strip()
         try:
-            # 🟢 ១. រក្សាទុកទិន្នន័យ ID, ឈ្មោះ និងលេខសម្ងាត់ ចូលតារាង teachers (ត្រឹមត្រូវតាម Schema DB បង)
+            # 🟢 ១. រក្សាទុកទិន្នន័យចូលតារាង teachers 
             res_tch = supabase.table("teachers").insert({
                 "teacher_id": tch_id, 
                 "name": tch_name, 
                 "password": pwd
             }).execute()
             
-            # 🟢 ២. បង្កើតគណនីរង់ចាំក្នុងតារាង users (លុបជួរ 'password' ចេញដាច់ខាត ការពារ Error PGRST204)
+            # 🟢 ២. បង្កើតគណនីរង់ចាំក្នុងតារាង users (គ្មានជួរ password)
             supabase.table("users").insert({
                 "telegram_id": f"PENDING_{tch_id}", 
                 "role": "TEACHER", 
@@ -732,9 +732,7 @@ def register_admin_teacher_handlers(bot, supabase):
             else:
                 bot.send_message(chat_id, "❌ បរាជ័យ៖ ដាតាបេសបដិសេធការរក្សាទុក។")
         except Exception as e:
-            # 📢 ប្រសិនបើលោត Error ទៀត វានឹងប្រាប់ចំៗភ្លាម
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
-
 
     # ========================================================
     # 🏢 មុខងារ៖ ថែមផ្នែកឱ្យគ្រូ (/adddept) - ទម្រង់ Wizard Steps
