@@ -221,7 +221,7 @@ if __name__ == "__main__":
     print("📢 [SYSTEM] Registering handlers...")
     
     # ⚠️ ត្រូវចុះឈ្មោះ Handler របស់សិស្ស និង Admin ទាំងអស់ឱ្យរួចរាល់មុនគេបង្អស់
-    student_handlers.register_student_handlers(bot.supabase)
+    student_handlers.register_student_handlers(bot,supabase)
     # admin_handlers.register_admin_handlers(bot) # (បើមាន)
     
     print("🎯 [SUCCESS] DUC System API Core Engine is live and Polling...")
