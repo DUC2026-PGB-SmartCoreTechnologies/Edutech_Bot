@@ -718,15 +718,23 @@ def register_admin_teacher_handlers(bot, supabase):
 ​      def process_tch_final(message, tch_id, tch_name):
         chat_id = message.chat.id
         pwd = message.text.strip()
+        
         try:
-            # 🟢 ១. រក្សាទុកទិន្នន័យចូលតារាង teachers 
+            # 🔍 🔒 ជាន់ការពារចុងក្រោយ៖ ឆែកមើល ID គ្រូម្ដងទៀត ការពារករណីលោកនាយកវាយបន្តពីជំហានចាស់
+            check_exist = supabase.table("teachers").select("teacher_id").eq("teacher_id", tch_id).execute()
+            
+            if check_exist.data:
+                bot.send_message(chat_id, f"❌ **ការបង្កើតត្រូវបានបដិសេធ៖** ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ លោកនាយក! សូមវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញជាមួយ ID ថ្មីបាទ។")
+                return
+                
+            # 📥 បើអត់មានជាន់គ្នាទេ ទើបអនុញ្ញាតឱ្យរក្សាទុកចូលតារាង teachers 
             res_tch = supabase.table("teachers").insert({
                 "teacher_id": tch_id, 
                 "name": tch_name, 
                 "password": pwd
             }).execute()
             
-            # 🟢 ២. បង្កើតគណនីរង់ចាំក្នុងតារាង users (គ្មានជួរ password)
+            # បង្កើតគណនីរង់ចាំក្នុងតារាង users 
             supabase.table("users").insert({
                 "telegram_id": f"PENDING_{tch_id}", 
                 "role": "TEACHER", 
@@ -737,6 +745,7 @@ def register_admin_teacher_handlers(bot, supabase):
                 bot.send_message(chat_id, f"🟢 **បង្កើតគណនីគ្រូថ្មីជោគជ័យ!**\n--------------------------------------------------\n🆔 **ID គ្រូ៖** `{tch_id}`\n👤 **ឈ្មោះ៖** *{tch_name}*\n🔑 **លេខសម្ងាត់៖** `{pwd}`")
             else:
                 bot.send_message(chat_id, "❌ បរាជ័យ៖ ដាតាបេសបដិសេធការរក្សាទុក។")
+                
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
 # ========================================================
