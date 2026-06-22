@@ -696,10 +696,24 @@ def register_admin_teacher_handlers(bot, supabase):
 
         sent_msg = bot.send_message(chat_id, "➕ **[បង្កើតគណនីគ្រូ - ជំហាន ១/៣]** សូមបំពេញ **ID គ្រូ** (ឧទាហរណ៍៖ TCH001)៖")
         bot.register_next_step_handler(sent_msg, process_tch_id)
-​    def process_tch_id(message):
+​      def process_tch_id(message):
         chat_id = message.chat.id
-        tch_id = message.text.strip()
-        sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះលោកគ្រូ-អ្នកគ្រូ** ៖")
+        tch_id = message.text.strip().upper() # បម្លែងជាអក្សរធំអូតូ
+        
+        try:
+            # 🔍 🔒 ប្រព័ន្ធការពារជាន់គ្នា៖ រត់ទៅឆែកមើលក្នុង Supabase មុនគេបង្អស់
+            check_exist = supabase.table("teachers").select("teacher_id").eq("teacher_id", tch_id).execute()
+            
+            if check_exist.data:
+                # 🛑 បើឆែកឃើញមាន ID នេះហើយ គឺកាត់ផ្ដាច់សៀគ្វី មិនឱ្យទៅជំហានបន្ទាប់ឡើយ
+                bot.send_message(chat_id, f"❌ **កំហុសបញ្ចូលទិន្នន័យ៖** លេខអត្តសញ្ញាណ ID គ្រូ `{tch_id}` នេះមាននៅក្នុងប្រព័ន្ធរួចរាល់ហើយបាទ!\n\n👉 សូមចុចប៊ូតុង ឬវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញជាមួយ ID ថ្មីបាទ។")
+                return
+                
+        except Exception as e:
+            print(f"❌ Check Teacher ID Exist Error: {e}")
+            
+        # 🟢 បើឆ្លងផុតរបាំងការពារ (រកមិនឃើញ ID ជាន់) ទើបអនុញ្ញាតឱ្យទៅជំហានទី ២ សួររកឈ្មោះ
+        sent_msg = bot.send_message(chat_id, f"🆔 ID គ្រូដែលបានកំណត់៖ `{tch_id}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះលោកគ្រូ-អ្នកគ្រូ** ៖")
         bot.register_next_step_handler(sent_msg, process_tch_name, tch_id)
 ​      def process_tch_final(message, tch_id, tch_name):
         chat_id = message.chat.id
