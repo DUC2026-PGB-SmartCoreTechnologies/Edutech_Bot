@@ -1,8 +1,9 @@
 import telebot
 from telebot import types
 from datetime import datetime
+
 # ===================================================================================
-# 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
+# 💡 register_admin_teacher_handlers ទទួល bot និង supabase ពី main.py រួចជាស្រេច
 # ===================================================================================
 def register_admin_teacher_handlers(bot, supabase):
 
@@ -24,7 +25,7 @@ def register_admin_teacher_handlers(bot, supabase):
                 
                 # បើអ្នកដែលកំពុងវាយនេះ មិនមែនជា Admin ចាស់ទេ គឺចាក់សោរបដិសេធភ្លាម!
                 if str(user_id) != str(existing_admin_id):
-                    bot.reply_to(message, "❌ **សុំទោស!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ។ លោកអ្នកមិនអាច Login ចូលបានឡើយ។")
+                    bot.reply_to(message, "❌ **សុំទោស!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ។ លោកអ្នកមិនអាច Login ចូលបានឡើយBound។")
                     print(f"⚠️ [SECURITY BLOCK] ID {user_id} ព្យាយាមលួច Login ត្រួតលើ Admin ចាស់ ID {existing_admin_id}!")
                     return
             
@@ -81,7 +82,7 @@ def register_admin_teacher_handlers(bot, supabase):
     # ===================================================================================
     # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (តម្រឹមជួរ Spaces សុទ្ធ ១០០%)
     # ===================================================================================
-   ​@bot.callback_query_handler(func=lambda call: True)
+    @bot.callback_query_handler(func=lambda call: True)
     def handle_all_system_inline_clicks(call):
         chat_id = call.message.chat.id
         action = call.data
@@ -143,13 +144,12 @@ def register_admin_teacher_handlers(bot, supabase):
 
                 # ❌ បដិសេធសិទ្ធិភ្លាម បើរកឈ្មោះក្នុង Database មិនឃើញ
                 if not is_valid_admin:
-                    bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
+                    bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound。", show_alert=True)
                     return
 
                 # 📊 កម្រិតទី ៣៖ ដំណើរការហៅទៅកាន់មុខងារ Wizard Steps នីមួយៗ (តាមគ្រាប់ចុចដែលបានចុច)
                 # --------------------------------------------------------------------------------
                 if action == "school_stats":
-                    # បើចង់ឱ្យហៅបញ្ជាអូតូ គឺយើងបោះសារទៅកាន់ Function ចាប់ផ្ដើមរបស់ Wizard នោះ
                     school_stats_command(call.message) 
                     
                 elif action == "hw_analytics":
@@ -168,27 +168,27 @@ def register_admin_teacher_handlers(bot, supabase):
                     check_requests_command(call.message)
                     
                 elif action == "approve":
-                    # សម្រាប់ប៊ូតុងអនុម័ត ឱ្យផ្ញើសារណែនាំទម្រង់វាយបញ្ជា
                     bot.send_message(chat_id, "🟢 **[ របៀបអនុម័ត / Approve សិស្ស ]**\nសូមវាយបញ្ជា៖ `/approve លេខTelegramID, លេខIDសិស្ស`", parse_mode='Markdown')
                     
                 # 👤 គ្រុបមុខងារទម្រង់ Wizard Steps (សួរ-ឆ្លើយ ជាជំហានៗ)
                 elif action == "addstu":
-                    ​ add_student_wizard(call.message) # ហៅមុខងារថែមសិស្សដែលបានធ្វើមុននេះ
+                    add_student_wizard(call.message)
                     
                 elif action == "addteacher":
-                    add_teacher_wizard(call.message) # ហៅមុខងារ Wizard ថែមគ្រូថ្មី
+                    add_teacher_wizard(call.message)
                     
                 elif action == "adddiscipline":
-                    add_discipline_wizard(call.message) # ហៅមុខងារ Wizard កត់វិន័យ
+                    add_discipline_wizard(call.message)
                     
                 elif action == "grade":
-                    grade_wizard(call.message) # ហៅមុខងារ Wizard ដាក់ពិន្ទុ
+                    grade_homework_wizard(call.message)
                     
                 elif action == "addnotice":
-                    add_notice_wizard(call.message) # ហៅមុខងារ Wizard ថែមសេចក្តីប្រកាស
+                    add_notice_wizard(call.message)
 
         except Exception as e:
             print(f"❌ System Error inside callback handler: {e}")
+
     # ========================================================
     # 👩‍🏫 មុខងារ៖ គ្រូ Login ផ្ទៀងផ្ទាត់ជាមួយ ID & Password
     # ========================================================
@@ -244,7 +244,7 @@ def register_admin_teacher_handlers(bot, supabase):
                 f"👩‍🏫 **[ ស្វាគមន៍ {teacher_real_name} ចូលកាន់ប្រព័ន្ធ DUC ]**\n"
                 "--------------------------------------------------\n"
                 f"🆔 **ID គ្រូបង្រៀន៖** `{teacher_id_input}`\n"
-                "🔐 **ស្ថានភាព៖** ផ្ទៀងផ្ទាត់អត្តសញ្ញាណជោគជ័យ!\n"
+                f"🔐 **ស្ថានភាព៖** ផ្ទៀងផ្ទាត់អត្តសញ្ញាណជោគជ័យ!\n"
                 "--------------------------------------------------\n"
                 "🤖 លោកគ្រូអាចប្រើប្រាស់ **ប៊ូតុង Menu ខាងក្រោម** ដើម្បីគ្រប់គ្រងការងារសាលាបានហើយបាទ"
             )
@@ -254,7 +254,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ Teacher Login Error: {e}")
             bot.reply_to(message, f"❌ ប្រព័ន្ធជួបបញ្ហាបច្ចេកទេស៖ `{e}`")
-
 
     # ========================================================
     # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ពេលគ្រូ ឬ Admin ចុចប៊ូតុង Menu ធំៗ
@@ -298,14 +297,13 @@ def register_admin_teacher_handlers(bot, supabase):
 
         elif user_text == "🔙 ចាកចេញ (Logout)":
             try:
-                user_id = message.from_user.id
-                supabase.table("users").update({"status": "NEW", "role": "USER"}).eq("telegram_id", user_id).execute()
-                supabase.table("teachers").update({"telegram_id": None}).eq("telegram_id", user_id).execute()
+                logout_user_id = message.from_user.id
+                supabase.table("users").update({"status": "NEW", "role": "USER"}).eq("telegram_id", logout_user_id).execute()
+                supabase.table("teachers").update({"telegram_id": None}).eq("telegram_id", logout_user_id).execute()
                 remove_markup = types.ReplyKeyboardRemove(selective=False)
-                bot.send_message(chat_id, "👋 **ចាកចេញពីគណនីជោគជ័យ!** សូមវាយ `/start` ដើម្បីចូលគណនីផ្សេងទៀតបាទ។", reply_markup=remove_markup)
+                bot.send_message(chat_id, "👋 **ចាកចេញពីគណនីជោគជ័យ!** សូមវាយ `/start` ដើម្បីចូលគណនីផ្សេងទៀតបាទBound។", reply_markup=remove_markup)
             except Exception as e:
                 bot.reply_to(message, f"❌ Logout ជួបបញ្ហា៖ `{e}`")
-
 
     # ========================================================
     # 📚 មុខងារ៖ គ្រូដាក់កិច្ចការផ្ទះ (/addhw) - ទម្រង់ Wizard Steps
@@ -321,7 +319,6 @@ def register_admin_teacher_handlers(bot, supabase):
         class_input = message.text.strip().upper()
         
         try:
-            # 🔍 ប្រព័ន្ធស្កែនឆែករកឈ្មោះថ្នាក់ពីតារាងសិស្ស (CHECK FIRST តាមកូដចាស់បង)
             student_check = supabase.table("students").select("class_level").eq("class_level", class_input).limit(1).execute()
             
             if not student_check.data:
@@ -392,7 +389,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ មិនអាចរក្សាទុកកិច្ចការផ្ទះបានទេ៖ `{e}`")
 
-
     # ========================================================
     # 👤 មុខងារ៖ ថែមសិស្សថ្មី (/addstu) - ទម្រង់ Wizard Steps
     # ========================================================
@@ -403,7 +399,7 @@ def register_admin_teacher_handlers(bot, supabase):
         
         user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
         if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-            bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+            bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
             return
 
         sent_msg = bot.send_message(chat_id, "👉 **[ថែមសិស្ស - ជំហាន ១/៤]** សូមបំពេញ **លេខសម្គាល់ ID សិស្ស** (ឧទាហរណ៍៖ STU001)៖")
@@ -419,7 +415,7 @@ def register_admin_teacher_handlers(bot, supabase):
         chat_id = message.chat.id
         stu_name = message.text.strip()
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-        markup.add("ประុស (M)", "ស្រី (F)")
+        markup.add("ប្រុស (M)", "ស្រី (F)")
         sent_msg = bot.send_message(chat_id, f"🆔 ID សិស្ស៖ `{stu_id}`\n👤 ឈ្មោះ៖ `{stu_name}`\n\n👉 **[ជំហាន ៣/៤]** សូមជ្រើសរើស **ភេទសិស្ស**៖", reply_markup=markup)
         bot.register_next_step_handler(sent_msg, process_stu_gender, stu_id, stu_name)
 
@@ -440,9 +436,8 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ `{e}`")
 
-
-   # ===================================================================================
-    # ⚖️ មុខងារ៖ កត់ត្រាវិន័យសិស្ស (/adddiscipline) - ទម្រង់ Wizard Steps (Sync Columns DB ១០០%)
+    # ===================================================================================
+    # ⚖️ មុខងារ៖ កត់ត្រាវិន័យសិស្ស (/adddiscipline) - ទម្រង់ Wizard Steps
     # ===================================================================================
     @bot.message_handler(commands=['adddiscipline'])
     def add_discipline_wizard(message):
@@ -451,10 +446,10 @@ def register_admin_teacher_handlers(bot, supabase):
         
         user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
         if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-            bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+            bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
             return
 
-        sent_msg = bot.send_message(chat_id, "⚖️ **[កត់ត្រាវិន័យ - ជំហាន ១/៣]** សូមបំពេញ **លេខសម្គាល់ ID សិស្ស** (ឧទាហរណ៍៖ STU001)៖")
+        sent_msg = bot.send_message(chat_id, "⚖️ **[កត់ត្រាវិន័យ - ជំហាន ១/৩]** សូមបំពេញ **លេខសម្គាល់ ID សិស្ស** (ឧទាហរណ៍៖ STU001)៖")
         bot.register_next_step_handler(sent_msg, process_disc_id)
 
     def process_disc_id(message):
@@ -473,7 +468,6 @@ def register_admin_teacher_handlers(bot, supabase):
         chat_id = message.chat.id
         corrective_act = message.text.strip()
         try:
-            # 🟢 💡 កែតម្រូវចំៗ៖ ប្រើ 'incident_description' និង 'corrective_action' ឱ្យត្រូវតាម Supabase របស់បងបេះបិទ
             res = supabase.table("discipline_records").insert({
                 "student_id": stu_id, 
                 "incident_description": incident_desc, 
@@ -487,7 +481,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e: 
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
 
-
     # ========================================================
     # 📅 មុខងារ៖ ថែមតារាងកាលវិភាគ (/addschedule) - ទម្រង់ Wizard Steps
     # ========================================================
@@ -498,10 +491,10 @@ def register_admin_teacher_handlers(bot, supabase):
         
         user_check = supabase.table("users").select("role").eq("telegram_id", user_id).execute()
         if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-            bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+            bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
             return
 
-        sent_msg = bot.send_message(chat_id, "📅 **[ថែមកាលវិភាគ - ជំហាន ១/៦]** សូមបំពេញ **ឈ្មោះថ្នាក់** (ឧទាហរណ៍៖ GRADE12_A)៖")
+        sent_msg = bot.send_message(chat_id, "📅 **[ថែមកាលវិភាគ - ជំហាន ១/៦]** សូមបំពេញ **ឈ្មោះថ្នាក់** (ឧទاهرណ៍៖ GRADE12_A)៖")
         bot.register_next_step_handler(sent_msg, process_sch_class)
 
     def process_sch_class(message):
@@ -555,7 +548,6 @@ def register_admin_teacher_handlers(bot, supabase):
             else:
                 bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
 
-
     # ========================================================
     # ✍️ មុខងារ៖ ដាក់ពិន្ទុ & Feedback ឱ្យសិស្ស (/grade) - ទម្រង់ Wizard Steps
     # ========================================================
@@ -566,7 +558,7 @@ def register_admin_teacher_handlers(bot, supabase):
         
         user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
         if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-            bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+            bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
             return
 
         sent_msg = bot.send_message(chat_id, "✍️ **[ដាក់ពិន្ទុ - ជំហាន ១/៣]** សូមបំពេញ **ID Submission** របស់សិស្ស៖")
@@ -596,9 +588,8 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ មិនអាចរក្សាទុកការដាក់ពិន្ទុបានទេ៖ `{e}`")
 
-
     # ========================================================
-    # 📢 មុខងារ៖ ថែមសេចក្ដីប្រកាស (/addnotice) - ទម្រង់ Wizard + ប្រព័ន្ធបាញ់សាររួមសាលាអមប៊ូតុង
+    # 📢 មុខងារ៖ ថែមសេចក្ដីប្រកាស (/addnotice) - ទម្រង់ Wizard
     # ========================================================
     @bot.message_handler(commands=['addnotice'])
     def add_notice_wizard(message):
@@ -631,7 +622,6 @@ def register_admin_teacher_handlers(bot, supabase):
         content = message.text.strip()
         
         try:
-            # 🎯 រក្សាទុកចូលតារាង school_notices តាមទម្រង់ចាស់របស់បង
             notice_res = supabase.table("school_notices").insert({
                 "title": title, "content": content, "notice_type": target, "created_by_telegram_id": int(user_id) 
             }).select().execute()
@@ -639,7 +629,6 @@ def register_admin_teacher_handlers(bot, supabase):
             notice_id = notice_res.data[0]['id'] if notice_res.data else None
             broadcast_msg = f"📢 **[ សេចក្ដីជូនដំណឹងថ្មីពីសាលា ]**\n📌 **ចំណងជើង៖** {title}\n----------------------------------------\n\n📝 **ខ្លឹមសារ៖** {content}"
 
-            # 🎛️ បង្កើតប៊ូតុង Inline Keyboard សម្រាប់ឱ្យចុច "ទទួលដឹងឮ"
             markup_ack = types.InlineKeyboardMarkup()
             markup_ack.add(types.InlineKeyboardButton("✅ ខ្ញុំបានអាន និងទទួលដឹងឮ (Acknowledge)", callback_data=f"ack_{notice_id}"))
 
@@ -658,7 +647,7 @@ def register_admin_teacher_handlers(bot, supabase):
                     for t in teachers_res.data:
                         if t.get('telegram_id'): teacher_chats.add(str(t['telegram_id']))
                         
-            if target not in ["ALL", "STUDENT", "TEACHER"]: # បាញ់ចំថ្នាក់ជាក់លាក់
+            if target not in ["ALL", "STUDENT", "TEACHER"]: 
                 students_res = supabase.table("students").select("parent_telegram_id", "group_chat_id").eq("class_level", target).execute()
                 if students_res.data:
                     for s in students_res.data:
@@ -686,7 +675,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
 
-
     # ========================================================
     # 🏖️ មុខងារ៖ ថែមថ្ងៃឈប់សម្រាកសាលា (/addholiday) - ទម្រង់ Wizard Steps + Broadcast
     # ========================================================
@@ -697,7 +685,7 @@ def register_admin_teacher_handlers(bot, supabase):
         
         user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
         if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-            bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+            bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
             return
 
         sent_msg = bot.send_message(chat_id, "🏖️ **[ថែមថ្ងៃឈប់សម្រាក - ជំហាន ១/៣]** សូមបំពេញ **ឈ្មោះបុណ្យជាភាសាខ្មែរ** ៖")
@@ -760,7 +748,8 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"🟢 **បន្ថែមថ្ងៃឈប់សម្រាកជោគជ័យ!**\n🎉 ឱកាស៖ `{name_kh}`\n📲 ផ្ញើទៅសមាជិក (Private)៖ `{count_private}` នាក់\n🏫 បាញ់ចូលគ្រុបថ្នាក់៖ `{count_group}` គ្រុប")
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
- # ===================================================================================
+
+    # ===================================================================================
     # 👨‍🏫 មុខងារ៖ បង្កើតគណនីគ្រូថ្មី (/addteacher) - ទម្រង់ Wizard Steps ពេញលេញ
     # ===================================================================================
     @bot.message_handler(commands=['addteacher'])
@@ -770,7 +759,7 @@ def register_admin_teacher_handlers(bot, supabase):
         
         user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
         if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-            bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+            bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
             return
 
         sent_msg = bot.send_message(chat_id, "➕ **[បង្កើតគណនីគ្រូ - ជំហាន ១/៣]** សូមបំពេញ **ID គ្រូ** (ឧទាហរណ៍៖ TCH001)៖")
@@ -781,7 +770,6 @@ def register_admin_teacher_handlers(bot, supabase):
         tch_id = message.text.strip().upper()
         
         try:
-            # 🔍 🔒 របាំងការពារជាន់គ្នាទី ១
             check_exist = supabase.table("teachers").select("teacher_id").eq("teacher_id", tch_id).execute()
             if check_exist.data:
                 bot.send_message(chat_id, f"❌ **ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ!** សូមវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញ។")
@@ -802,20 +790,16 @@ def register_admin_teacher_handlers(bot, supabase):
         pwd = message.text.strip()
         
         try:
-            # 🔍 🔒 ជាន់ការពារ៖ ឆែកមើល ID គ្រូម្ដងទៀត ការពារការជាន់គ្នា
             check_exist = supabase.table("teachers").select("teacher_id").eq("teacher_id", tch_id).execute()
             if check_exist.data:
-                bot.send_message(chat_id, f"❌ **ការបង្កើតត្រូវបានបដិសេធ៖** ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ លោកនាយក! សូមវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញ។")
+                bot.send_message(chat_id, f"❌ **ការបង្កើតត្រូវបានបដិសេធ៖** ID គ្រូ `{tch_id}` នេះមានក្នុងប្រព័ន្ធរួចរាល់ហើយ លោកនាយក! សូមវាយ `/addteacher` ដើម្បីចាប់ផ្ដើមឡើងវិញbound។")
                 return
                 
-            # 📥 រក្សាទុកទិន្នន័យចូលតារាង teachers តែមួយគត់ (ត្រូវតាម Schema DB បង ១០០%)
             res_tch = supabase.table("teachers").insert({
                 "teacher_id": tch_id, 
                 "name": tch_name, 
                 "password": pwd
             }).execute()
-            
-            # ❌ (សម្អាតដាច់ខាត) លុបប្លុក supabase.table("users").insert(...) ចាស់ចោលទាំងស្រុង លែងឱ្យមានក្នុងកូដទៀតហើយ
             
             if res_tch.data:
                 success_text = (
@@ -833,7 +817,8 @@ def register_admin_teacher_handlers(bot, supabase):
                 
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសដាតាបេស៖** `{e}`")
-# ========================================================
+
+    # ========================================================
     # 🏢 មុខងារ៖ ថែមផ្នែកឱ្យគ្រូ (/adddept) - ទម្រង់ Wizard Steps
     # ========================================================
     @bot.message_handler(commands=['adddept'])
@@ -843,7 +828,7 @@ def register_admin_teacher_handlers(bot, supabase):
         
         user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
         if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-            bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+            bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
             return
 
         sent_msg = bot.send_message(chat_id, "🏢 **[ថែមផ្នែកឱ្យគ្រូ - ជំហាន ១/២]** សូមបំពេញ **ID គ្រូ** (ឧទាហរណ៍៖ TCH001)៖")
@@ -876,7 +861,6 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"🟢 **រៀបចំរចនាសម្ព័ន្ធគ្រូជោគជ័យ!**\n🏢 ផ្នែក៖ `{dept_name}` (ID: {dept_id})\n👤 គ្រូ៖ `{t_name}`")
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
-
 
     # ========================================================
     # 🎓 មុខងារ៖ ថែមជំនាញឱ្យគ្រូ (/addmajor) - ទម្រង់ Wizard Steps
@@ -937,7 +921,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
 
-
     # ========================================================
     # 📊 មុខងារ៖ /ld មើលវត្តមានសិស្សទាំងអស់ក្នុងថ្នាក់
     # ========================================================
@@ -966,13 +949,12 @@ def register_admin_teacher_handlers(bot, supabase):
                 s_name = row.get('student_name', 'មិនស្គាល់ឈ្មោះ')
                 status = row.get('status', 'PENDING').upper()
                 status_emoji = "🟢 មក" if status in ["PRESENT", "វត្តមាន", "មក"] else "🔴 អវត្តមាន" if status in ["ABSENT", "អវត្តមាន"] else "🟡 ច្បាប់"
-                report_msg += f"🔹 {s_name}  👉  {status_emoji}\n"
+                report_msg += f"🔹 {s_name}   👉   {status_emoji}\n"
                 
             bot.send_message(chat_id, report_msg, parse_mode='Markdown')
             
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញរបាយការណ៍បានទេ៖ `{e}`")
-
 
     # ========================================================
     # 📝 មុខងារ៖ /lh ទាញយកកិច្ចការសិស្ស (PDF/Picture) មកមើល
@@ -1016,7 +998,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញទិន្នន័យកិច្ចការសិស្សបានទេ៖ `{e}`")
 
-
     # ========================================================
     # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ប៊ូតុង Inline "✍️ ដាក់ពិន្ទុឱ្យ..."
     # ========================================================
@@ -1026,11 +1007,10 @@ def register_admin_teacher_handlers(bot, supabase):
         instruction = (
             f"✍️ **[ វគ្គបញ្ចូលពិន្ទុ ]**\n"
             f"លោកគ្រូអាចបញ្ចូលពិន្ទុឱ្យកិច្ចការលេខ `{sub_id}` បានដោយចុចប៊ូតុង ឬវាយ៖\n"
-            f"👉 `/grade` រួចបំពេញតាមលំដាប់លំដោយបាទ។"
+            f"👉 `/grade` រួចបំពេញតាមលំដាប់លំដោយបាទBound。"
         )
         bot.send_message(call.message.chat.id, instruction, parse_mode='Markdown')
         bot.answer_callback_query(call.id)
-
 
     # ========================================================
     # 🔍 មុខងារ៖ មើលបញ្ជីសិស្សចុះឈ្មោះថ្មី (/checkreq)
@@ -1075,7 +1055,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ Error: `{e}`")
 
-
     # ========================================================
     # 🟢 មុខងារ៖ Admin វាយ /approve ដើម្បីបើកសិទ្ធិឱ្យសិស្ស
     # ========================================================
@@ -1087,7 +1066,7 @@ def register_admin_teacher_handlers(bot, supabase):
         try:
             user_check = supabase.table("users").select("role").eq("telegram_id", user_id).execute()
             if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
                 return
 
             input_text = message.text.strip()[8:].strip()
@@ -1134,7 +1113,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ **Bot Error:** `{e}`", parse_mode='Markdown')
 
-
     # ========================================================
     # 🎚️ មុខងារ៖ /setclass ដើម្បីភ្ជាប់ ID គ្រុបទៅកាន់ថ្នាក់រៀន
     # ========================================================
@@ -1150,7 +1128,7 @@ def register_admin_teacher_handlers(bot, supabase):
         try:
             user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
             if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិជា Admin ឡើយ។")
+                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិជា Admin ឡើយ Bound🚷")
                 return
 
             class_name_input = message.text.strip()[9:].strip().upper()
@@ -1168,7 +1146,7 @@ def register_admin_teacher_handlers(bot, supabase):
                     f"🎯 **ភ្ជាប់គ្រុបថ្នាក់រៀនអូតូជោគជ័យ!**\n\n"
                     f"🏫 **ថ្នាក់រៀន៖** `{class_name_input}`\n"
                     f"🆔 **ID គ្រុបដែលចាប់បាន៖** `{chat_id}`\n"
-                    f"👥 **عددសិស្សដែលទទួលបាន៖** `{len(update_res.data)}` នាក់ត្រូវបានដាក់បញ្ចូល។"
+                    f"👥 **ចំនួនសិស្សដែលទទួលបាន៖** `{len(update_res.data)}` នាក់ត្រូវបានដាក់បញ្ចូលBound。"
                 )
                 bot.send_message(chat_id, success_msg, parse_mode='Markdown')
             else:
@@ -1176,7 +1154,6 @@ def register_admin_teacher_handlers(bot, supabase):
 
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
-
 
     # ========================================================
     # 📊 មុខងារ៖ /school_stats ដើម្បីមើលស្ថិតិសរុបនៃសាលារៀន
@@ -1224,7 +1201,6 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, stats_msg, parse_mode='Markdown')
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`", parse_mode='Markdown')
-
 
     # ========================================================
     # 📈 មុខងារ៖ /hw_analytics វិភាគភាគរយប្រគល់កិច្ចការ
@@ -1288,9 +1264,8 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
 
-
-   # ===================================================================================
-    # 🏫 បញ្ជីទី ១៖ /list_classes រាយឈ្មោះថ្នាក់ (ជួសជុលការមិនដើរ និងលុបថ្នាក់ឌុប)
+    # ===================================================================================
+    # 🏫 បញ្ជីទី ១៖ /list_classes រាយឈ្មោះថ្នាក់
     # ===================================================================================
     @bot.message_handler(commands=['list_classes'])
     def list_classes_command(message):
@@ -1300,7 +1275,7 @@ def register_admin_teacher_handlers(bot, supabase):
         try:
             user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
             if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
                 return
 
             students_res = supabase.table("students").select("class_level").execute()
@@ -1326,7 +1301,6 @@ def register_admin_teacher_handlers(bot, supabase):
             msg += "👇 លោកអ្នកអាចចុចលើប៊ូតុងខាងក្រោម ដើម្បីមើលបញ្ជីឈ្មោះសិស្សភ្លាមៗ៖"
 
             markup = types.InlineKeyboardMarkup(row_width=2)
-            # 💡 រៀបចំប៊ូតុងឱ្យស្អាត លុបបំបាត់ការឌុបថ្នាក់លើអេក្រង់
             btn_list = [types.InlineKeyboardButton(f"📖 ថ្នាក់ {c}", callback_data=f"view_students:{c}") for c in sorted(distinct_classes)]
             markup.add(*btn_list)
             
@@ -1334,9 +1308,8 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
 
-
     # ===================================================================================
-    # 🏢 បញ្ជីទី ២៖ /list_depts រាយឈ្មោះផ្នែក (ដោះស្រាយ BUTTON_DATA_INVALID)
+    # 🏢 បញ្ជីទី ២៖ /list_depts រាយឈ្មោះផ្នែក
     # ===================================================================================
     @bot.message_handler(commands=['list_depts'])
     def list_depts_command(message):
@@ -1346,13 +1319,13 @@ def register_admin_teacher_handlers(bot, supabase):
         try:
             user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
             if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
                 return
 
             dept_res = supabase.table("departments").select("id", "department_name").execute()
             
             if not dept_res.data:
-                bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យដេប៉ាតាម៉ង់/ផ្នែកនៅក្នុងប្រព័ន្ធឡើយ។")
+                bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យដេប៉ាតាម៉ង់/ផ្នែកនៅក្នុងប្រព័ន្ធឡើយBound")
                 return
 
             msg = f"🏢 [ បញ្ជីឈ្មោះដេប៉ាតាម៉ង់/ផ្នែកសរុប៖ {len(dept_res.data)} ផ្នែក ]\n"
@@ -1363,7 +1336,6 @@ def register_admin_teacher_handlers(bot, supabase):
             msg += "👇 លោកអ្នកអាចចុចលើប៊ូតុងខាងក្រោម ដើម្បីមើលមុខវិជ្ជាសកម្មក្នុងផ្នែកនីមួយៗ៖"
 
             markup = types.InlineKeyboardMarkup(row_width=1)
-            # 💡 បោះទៅតែ ID សុទ្ធ ដើម្បីកុំឱ្យវែងហួសកំណត់ 64 Bytes ចៀសវាងការចុចមិនដើរ
             btn_list = [types.InlineKeyboardButton(f"🏢 {d.get('department_name')}", callback_data=f"view_dept:{d.get('id')}") for d in dept_res.data]
             markup.add(*btn_list)
             
@@ -1371,9 +1343,8 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
 
-
     # ===================================================================================
-    # 👨‍🏫 បញ្ជីទី ៣៖ /list_teachers រាយឈ្មោះគ្រូ (ជួសជុលការចុចប៊ូតុងគាំង)
+    # 👨‍🏫 បញ្ជីទី ៣៖ /list_teachers រាយឈ្មោះគ្រូ
     # ===================================================================================
     @bot.message_handler(commands=['list_teachers'])
     def list_teachers_command(message):
@@ -1383,13 +1354,13 @@ def register_admin_teacher_handlers(bot, supabase):
         try:
             user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
             if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                bot.reply_to(message, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound🚷")
                 return
 
             teachers_res = supabase.table("teachers").select("teacher_id", "name").execute()
             
             if not teachers_res.data:
-                bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យលោកគ្រូ-អ្នកគ្រូនៅក្នុងប្រព័ន្ធឡើយ។")
+                bot.send_message(chat_id, "ℹ️ មិនទាន់មានទិន្នន័យលោកគ្រូ-អ្នកគ្រូនៅក្នុងប្រព័ន្ធឡើយBound")
                 return
 
             msg = f"👨‍🏫 [ បញ្ជីឈ្មោះលោកគ្រូ-អ្នកគ្រូសរុប៖ {len(teachers_res.data)} នាក់ ]\n"
@@ -1407,13 +1378,9 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
 
-
     # ====================================================================================================
-    # 📡 ៤. ផ្ទាំងប្រមូលផ្ដុំគ្រាប់ចាប់សកម្មភាពចុចប៊ូតុងទាំងអស់ (ALL CALLBACK HANDLERS - ដំណើរការ ១០០%)
+    # 📡 ៤. ផ្ទាំងប្រមូលផ្ដុំគ្រាប់ចាប់សកម្មភាពចុចប៊ូតុងទាំងអស់ (ALL CALLBACK HANDLERS)
     # ====================================================================================================
-    
-    # 📡 ៤.១ ចាប់សកម្មភាពពេលចុចមើល «សិស្សក្នុងថ្នាក់»
-    @bot.callback_query_handler(func=lambda call: call.data.startswith('view_students:'))
     def callback_view_students(call):
         chat_id = call.message.chat.id
         try:
@@ -1443,8 +1410,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
 
-    # 📡 ៤.២ ចាប់សកម្មភាពពេលចុចមើល «មុខវិជ្ជាតាមដេប៉ាតាម៉ង់»
-    @bot.callback_query_handler(func=lambda call: call.data.startswith('view_dept:'))
     def callback_view_dept(call):
         chat_id = call.message.chat.id
         try:
@@ -1461,7 +1426,6 @@ def register_admin_teacher_handlers(bot, supabase):
             
             bot.answer_callback_query(call.id, f"កំពុងទាញទិន្នន័យ {dept_name}...")
 
-            # 💡 ទាញយកមុខវិជ្ជាមកបង្ហាញឱ្យចំតារាង schedules 
             hw_res = supabase.table("schedules").select("subject_name").execute()
             msg = f"🏢 [ បញ្ជីឈ្មោះមុខវិជ្ជាសកម្មក្នុង៖ {dept_name} ]\n"
             msg += "========================================\n"
@@ -1471,19 +1435,17 @@ def register_admin_teacher_handlers(bot, supabase):
                 found_sub = False
                 sub_idx = 1
                 for sub in sorted(distinct_subjects):
-                    msg += f"  └ {sub_idx}. មុខវិជ្ជា៖ {sub}\n"
+                    msg += f"   └ {sub_idx}. មុខវិជ្ជា៖ {sub}\n"
                     sub_idx += 1
                     found_sub = True
-                if not found_sub: msg += "  └ (មិនទាន់មានមុខវិជ្ជាដំឡើងក្នុងផ្នែកនេះឡើយ)\n"
+                if not found_sub: msg += "   └ (មិនទាន់មានមុខវិជ្ជាដំឡើងក្នុងផ្នែកនេះឡើយ)\n"
             else:
-                msg += "  └ (មិនទាន់មានទិន្នន័យមុខវិជ្ជាសកម្មក្នុងប្រព័ន្ធ)\n"
+                msg += "   └ (មិនទាន់មានទិន្នន័យមុខវិជ្ជាសកម្មក្នុងប្រព័ន្ធ)\n"
             msg += "========================================\n"
             bot.send_message(chat_id, msg)
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុសបច្ចេកទេស៖ {e}")
 
-    # 📡 ៤.៣ ចាប់សកម្មភាពពេលចុចមើល «ប្រវត្តិរូប និងបន្ទុករបស់គ្រូ»
-    @bot.callback_query_handler(func=lambda call: call.data.startswith('view_teacher:'))
     def callback_view_teacher(call):
         chat_id = call.message.chat.id
         try:
@@ -1497,11 +1459,10 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.answer_callback_query(call.id, f"កំពុងទាញទិន្នន័យគ្រូ ID: {target_teacher_id}...")
 
             teacher_info = supabase.table("teachers").select("*").eq("teacher_id", target_teacher_id).execute()
-            # 💡 កែសម្រួល៖ ប្ដូរទៅហៅ 'study_day' ឱ្យត្រូវនឹងរចនាសម្ព័ន្ធតារាង schedules របស់បង
             schedule_info = supabase.table("schedules").select("class_level", "subject_name", "study_day", "start_time", "end_time").eq("teacher_id", target_teacher_id).execute()
 
             if not teacher_info.data:
-                bot.send_message(chat_id, "❌ រកមិនឃើញទិន្នន័យគ្រូម្នាក់នេះឡើយ។")
+                bot.send_message(chat_id, "❌ រកមិនឃើញទិន្នន័យគ្រូម្នាក់នេះឡើយBound")
                 return
 
             t_data = teacher_info.data[0]
@@ -1511,13 +1472,13 @@ def register_admin_teacher_handlers(bot, supabase):
             msg += f"👤 នាមនិងគោត្តនាម៖ {t_data.get('name')}\n"
             msg += f"📞 លេខទូរស័ព្ទ៖ {t_data.get('phone', 'N/A')}\n"
             msg += "----------------------------------------\n"
-            msg += "🏫 បន្ទុកថ្នាក់ និងមុខវិជ្ជាបង្រៀន៖\n"
+            msg += "🏫 បង្រៀនថ្នាក់ និងមុខវិជ្ជាបង្រៀន៖\n"
             if schedule_info.data:
                 for idx, sch in enumerate(schedule_info.data, 1):
-                    msg += f"  ├ {idx}. {sch.get('subject_name')} (ថ្នាក់៖ {sch.get('class_level')}) \n"
-                    msg += f"  │  └ ថ្ងៃ៖ {sch.get('study_day')} ({sch.get('start_time')} - {sch.get('end_time')})\n"
+                    msg += f"   ├ {idx}. {sch.get('subject_name')} (ថ្នាក់៖ {sch.get('class_level')}) \n"
+                    msg += f"   │  └ ថ្ងៃ៖ {sch.get('study_day')} ({sch.get('start_time')} - {sch.get('end_time')})\n"
             else:
-                msg += "  └ (មិនទាន់មានកាលវិភាគបង្រៀនឡើយ)\n"
+                msg += "   └ (មិនទាន់មានកាលវិភាគបង្រៀនឡើយ Bound)\n"
             msg += "========================================\n"
             bot.send_message(chat_id, msg)
         except Exception as e:
