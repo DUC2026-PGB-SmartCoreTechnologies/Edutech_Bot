@@ -410,68 +410,307 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"✅ **ដាក់ពិន្ទុជោគជ័យ!** កិច្ចការលេខ៖ `{sub_id}`")
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុស៖ `{e}`")
-
     # ========================================================
-    # 📢 មុខងារ៖ ថែមសេចក្ដីប្រកាស (/addnotice)
+    # 📢 មុខងារ៖ ថែមសេចក្ដីប្រកាស (/addnotice) - ប្រព័ន្ធបាញ់សារ (Broadcast)
     # ========================================================
     @bot.message_handler(commands=['addnotice'])
     def add_notice_wizard(message):
         chat_id = message.chat.id
-        sent_msg = bot.send_message(chat_id, "📢 **[ថែមសេចក្ដីប្រកាស - ជំហាន ១/៣]** សូមបំពេញ **គោលដៅ (Target)** (ALL, STUDENT, TEACHER)៖")
+        user_id = message.from_user.id
+        
+        # 🔒 របាំងការពារ៖ ឆែកសិទ្ធិ Admin
+        try:
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                return
+        except Exception as e:
+            print(f"⚠️ Check admin error: {e}")
+            return
+
+        sent_msg = bot.send_message(
+            chat_id, 
+            "📢 **[ថែមសេចក្ដីប្រកាស - ជំហាន ១/៣]**\n\n👉 សូមបំពេញ **គោលដៅ (Target)** ដែលត្រូវបាញ់សារទៅកាន់៖\n"
+            "• វាយពាក្យ `ALL` (ផ្ញើទៅកាន់គ្រូ អាណាព្យាបាល និងគ្រប់គ្រុបថ្នាក់)\n"
+            "• វាយពាក្យ `TEACHER` (ផ្ញើទៅកាន់លោកគ្រូ-អ្នកគ្រូទាំងអស់)\n"
+            "• វាយពាក្យ `STUDENT` (ផ្ញើទៅកាន់អាណាព្យាបាល/សិស្ស និងគ្រប់គ្រុបថ្នាក់)\n"
+            "• ឬវាយឈ្មោះថ្នាក់ជាក់លាក់ (ឧទាហរណ៍៖ `GRADE12_A`):"
+        )
         bot.register_next_step_handler(sent_msg, process_notice_target)
 
     def process_notice_target(message):
         chat_id = message.chat.id
         target = message.text.strip().upper()
-        sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ២/៣]** សូមបំពេញ **ចំណងជើង (Title)** ៖")
+        
+        if not target:
+            sent_msg = bot.send_message(chat_id, "⚠️ គោលដៅមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            bot.register_next_step_handler(sent_msg, process_notice_target)
+            return
+            
+        sent_msg = bot.send_message(chat_id, f"🎯 គោលដៅបាញ់សារ៖ `{target}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ចំណងជើង (Title)** នៃសេចក្ដីប្រកាស៖")
         bot.register_next_step_handler(sent_msg, process_notice_title, target)
 
     def process_notice_title(message, target):
         chat_id = message.chat.id
         title = message.text.strip()
-        sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ៣/៣]** សូមបំពេញ **ខ្លឹមសារព័ត៌មានលម្អិត** ៖")
+        
+        if not title:
+            sent_msg = bot.send_message(chat_id, "⚠️ ចំណងជើងមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            bot.register_next_step_handler(sent_msg, process_notice_title, target)
+            return
+            
+        sent_msg = bot.send_message(chat_id, f"📌 ចំណងជើង៖ *{title}*\n\n👉 **[ជំហាន ៣/៣]** សូមបំពេញ **ខ្លឹមសារព័ត៌មានលម្អិត** ដែលត្រូវប្រកាស៖")
         bot.register_next_step_handler(sent_msg, process_notice_final_broadcast, target, title)
 
     def process_notice_final_broadcast(message, target, title):
         chat_id = message.chat.id
         user_id = message.from_user.id
         content = message.text.strip()
+        
+        if not content:
+            sent_msg = bot.send_message(chat_id, "⚠️ ខ្លឹមសារមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            bot.register_next_step_handler(sent_msg, process_notice_final_broadcast, target, title)
+            return
+            
+        loading_msg = bot.send_message(chat_id, "⏳ កំពុងរក្សាទុក និងរៀបចំប្រព័ន្ធបាញ់សាររួមសាលា...")
+        
         try:
-            supabase.table("school_notices").insert({"title": title, "content": content, "notice_type": target, "created_by_telegram_id": int(user_id)}).execute()
-            bot.send_message(chat_id, f"🟢 **រក្សាទុក និងផ្សព្វផ្សាយជោគជ័យ!** គោលដៅ៖ `{target}`")
-        except Exception as e:
-            bot.send_message(chat_id, f"❌ កំហុស៖ `{e}`")
+            # 🎯 ១. រក្សាទុកព័ត៌មានចូលទៅកាន់តារាង "school_notices" ក្នុង Supabase
+            notice_res = supabase.table("school_notices").insert({
+                "title": title, 
+                "content": content, 
+                "notice_type": target, 
+                "created_by_telegram_id": int(user_id) 
+            }).select().execute()
 
+            notice_id = notice_res.data[0]['id'] if notice_res.data else None
+            
+            # ២. បង្កើតទម្រង់សារអត្ថបទសម្រាប់ Broadcast
+            broadcast_msg = (
+                f"📢 **[ សេចក្ដីជូនដំណឹងថ្មីពីសាលា DUC ]**\n"
+                f"📌 **ចំណងជើង៖** *{title}*\n"
+                f"----------------------------------------\n\n"
+                f"📝 **ខ្លឹមសារព័ត៌មាន៖**\n{content}\n\n"
+                f"----------------------------------------\n"
+                f"✨ _សូមលោកគ្រូ-អ្នកគ្រូ និងសិស្សានុសិស្សមេត្តាជ្រាបជាព័ត៌មាន_"
+            )
+
+            # 🎛️ បង្កើតប៊ូតុង Inline ចុច "ទទួលដឹងឮ" អមជាមួយសារ
+            markup_ack = types.InlineKeyboardMarkup()
+            markup_ack.add(types.InlineKeyboardButton("✅ ខ្ញុំបានអាន និងទទួលដឹងឮ (Acknowledge)", callback_data=f"ack_{notice_id}"))
+
+            # បង្កើត Set ទប់ស្កាត់ការផ្ញើសារស្ទួន (ទិន្នន័យមិនស្ទួន chat_id)
+            teacher_chats = set()
+            student_parent_chats = set()
+            group_chats = set()
+
+            # 🔍 កាត់សេចក្តីឆែកស្វែងរក ID ឆាតពីដាតាបេសតាមជម្រើស Target
+            if target == "STUDENT" or target == "ALL":
+                students_res = supabase.table("students").select("parent_telegram_id", "group_chat_id").execute()
+                if students_res.data:
+                    for s in students_res.data:
+                        if s.get('parent_telegram_id'): 
+                            student_parent_chats.add(str(s['parent_telegram_id']))
+                        if s.get('group_chat_id') and str(s['group_chat_id']).strip() not in ["", "null", "None"]: 
+                            group_chats.add(str(s['group_chat_id']).strip())
+            
+            if target == "TEACHER" or target == "ALL":
+                teachers_res = supabase.table("teachers").select("telegram_id").execute()
+                if teachers_res.data:
+                    for t in teachers_res.data:
+                        if t.get('telegram_id'): 
+                            teacher_chats.add(str(t['telegram_id']))
+                        
+            if target not in ["ALL", "STUDENT", "TEACHER"]: # លក្ខខណ្ឌ៖ បាញ់ចូលចំថ្នាក់ជាក់លាក់
+                students_res = supabase.table("students").select("parent_telegram_id", "group_chat_id").eq("class_level", target).execute()
+                if students_res.data:
+                    for s in students_res.data:
+                        if s.get('parent_telegram_id'): 
+                            student_parent_chats.add(str(s['parent_telegram_id']))
+                        if s.get('group_chat_id') and str(s['group_chat_id']).strip() not in ["", "null", "None"]: 
+                            group_chats.add(str(s['group_chat_id']).strip())
+
+            # 📡 ៣. ចាប់ផ្ដើមយុទ្ធនាការបាញ់សារចេញ (Broadcast Execution)
+            count_teacher = count_student_parent = count_group = 0
+            
+            # បាញ់ទៅលោកគ្រូ-អ្នកគ្រូ (ឆាតឯកជន)
+            for t_id in teacher_chats:
+                try:
+                    bot.send_message(int(t_id), broadcast_msg, reply_markup=markup_ack, parse_mode='Markdown')
+                    count_teacher += 1
+                except Exception: pass
+                
+            # ផ្ញើទៅសិស្ស/អាណាព្យាបាល (ឆាតឯកជន)
+            for sp_id in student_parent_chats:
+                try:
+                    bot.send_message(int(sp_id), broadcast_msg, reply_markup=markup_ack, parse_mode='Markdown')
+                    count_student_parent += 1
+                except Exception: pass
+                
+            # បាញ់ចូល Telegram Groups ថ្នាក់រៀនសាលា DUC
+            for g_id in group_chats:
+                try:
+                    bot.send_message(int(g_id), broadcast_msg, parse_mode='Markdown')
+                    count_group += 1
+                except Exception: pass
+
+            # លុបសាររង់ចាំ (Loading) ចេញ
+            try: bot.delete_message(chat_id, loading_msg.message_id)
+            except: pass
+
+            # 🎉 ប្រកាសលទ្ធផលជោគជ័យជូន Admin
+            final_report = (
+                f"🟢 **[ រក្សាទុកដាតាបេស និងផ្សព្វផ្សាយរួមរួចរាល់! ]**\n"
+                f"--------------------------------------------------\n"
+                f"🎯 **គោលដៅផ្សាយ៖** `{target}`\n"
+                f"📬 **ផ្ញើទៅឆាតគ្រូ៖** `{count_teacher}` នាក់\n"
+                f"📲 **ផ្ញើទៅឆាតសិស្ស/អាណាព្យាបាល៖** `{count_student_parent}` នាក់\n"
+                f"🏫 **បាញ់ចូល Groups ថ្នាក់រៀន៖** `{count_group}` គ្រុប\n"
+                f"--------------------------------------------------\n"
+                f"💡 _សារត្រូវបានបញ្ជូនទៅកាន់សមាជិកដែលបានផ្ទៀងផ្ទាត់_"
+            )
+            bot.send_message(chat_id, final_report, parse_mode='Markdown')
+
+        except Exception as e:
+            print(f"❌ Broadcast process error: {e}")
+            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសក្នុងការបាញ់សារ៖** `{e}`")
     # ========================================================
-    # 🏖️ មុខងារ៖ ថែមថ្ងៃឈប់សម្រាកសាលា (/addholiday)
+    # 🏖️ មុខងារ៖ ថែមថ្ងៃឈប់សម្រាកសាលា (/addholiday) - ប្រព័ន្ធបាញ់សាររួមសាលា
     # ========================================================
     @bot.message_handler(commands=['addholiday'])
     def add_holiday_wizard(message):
         chat_id = message.chat.id
-        sent_msg = bot.send_message(chat_id, "🏖️ **[ថែមថ្ងៃឈប់សម្រាក - ជំហាន ១/៣]** សូមបំពេញ **ឈ្មោះបុណ្យជាភាសាខ្មែរ** ៖")
+        user_id = message.from_user.id
+        
+        # 🔒 ឆែកសិទ្ធិ Admin
+        try:
+            user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+            if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
+                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                return
+        except Exception as e:
+            print(f"⚠️ Check admin error: {e}")
+            return
+
+        sent_msg = bot.send_message(chat_id, "🏖️ **[ថែមថ្ងៃឈប់សម្រាក - ជំហាន ១/៣]**\n\n👉 សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាខ្មែរ** ៖\n*(ឧទាហរណ៍៖ ពិធីបុណ្យអុំទូក)*")
         bot.register_next_step_handler(sent_msg, process_hol_kh)
 
     def process_hol_kh(message):
         chat_id = message.chat.id
         name_kh = message.text.strip()
-        sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះបុណ្យជាភាសាអង់គ្លេស** ៖")
+        
+        if not name_kh:
+            sent_msg = bot.send_message(chat_id, "⚠️ ឈ្មោះបុណ្យមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            bot.register_next_step_handler(sent_msg, process_hol_kh)
+            return
+            
+        sent_msg = bot.send_message(chat_id, f"🇰🇭 ឈ្មោះពិធីបុណ្យ៖ `{name_kh}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាអង់គ្លេស** ៖\n*(ឧទាហរណ៍៖ Water Festival)*")
         bot.register_next_step_handler(sent_msg, process_hol_en, name_kh)
 
     def process_hol_en(message, name_kh):
         chat_id = message.chat.id
         name_en = message.text.strip()
-        sent_msg = bot.send_message(chat_id, f"👉 **[ជំហាន ៣/៣]** សូមបំពេញ **ថ្ងៃឈប់សម្រាក** (លំនាំ៖ 2026-11-24)៖")
+        
+        if not name_en:
+            sent_msg = bot.send_message(chat_id, "⚠️ ឈ្មោះភាសាអង់គ្លេសមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            bot.register_next_step_handler(sent_msg, process_hol_en, name_kh)
+            return
+            
+        sent_msg = bot.send_message(chat_id, f"🇰🇭 ខ្មែរ៖ `{name_kh}`\n🇬🇧 អង់គ្លេស៖ `{name_en}`\n\n👉 **[ជំហាន ៣/៣]** សូមបំពេញ **កាលបរិច្ឆេទឈប់សម្រាក**\n*(លំនាំ៖ ឆ្នាំ-ខែ-ថ្ងៃ ឧទាហរណ៍៖ 2026-11-24)*៖")
         bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
 
     def process_hol_final(message, name_kh, name_en):
         chat_id = message.chat.id
         holiday_date = message.text.strip()
+        
+        if not holiday_date:
+            sent_msg = bot.send_message(chat_id, "⚠️ ថ្ងៃខែមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
+            return
+            
+        loading_msg = bot.send_message(chat_id, "⏳ កំពុងកត់ត្រាចូលដាតាបេស និងរៀបចំប្រព័ន្ធបាញ់ដំណឹងឈប់សម្រាករួម...")
+        
         try:
-            supabase.table("holidays").insert({"event_name_km": name_kh, "event_name_en": name_en, "holiday_date": holiday_date, "announcement_sent": 1}).execute()
-            bot.send_message(chat_id, f"🟢 **បន្ថែមថ្ងៃឈប់សម្រាកជោគជ័យ!** `{name_kh}`")
-        except Exception as e:
-            bot.send_message(chat_id, f"❌ កំហុស៖ `{e}`")
+            # 🎯 ១. កត់ត្រាទិន្នន័យចូលតារាង "holidays" ក្នុង Supabase
+            supabase.table("holidays").insert({
+                "event_name_km": name_kh, 
+                "event_name_en": name_en, 
+                "holiday_date": holiday_date, 
+                "announcement_sent": 1
+            }).execute()
+            
+            # ២. បង្កើតទម្រង់អត្ថបទសេចក្ដីជូនដំណឹងដើម្បី Broadcast
+            announcement_msg = (
+                "🚨 **[ សេចក្ដីជូនដំណឹង៖ ថ្ងៃឈប់សម្រាកសាលា DUC ]**\n\n"
+                "សូមជម្រាបជូន លោកគ្រូ អ្នកគ្រូ សិស្សានុសិស្ស និងអាណាព្យាបាលទាំងអស់មេត្តាជ្រាបថា សាលានឹងមានការ**ឈប់សម្រាក**ក្នុងឱកាស៖\n\n"
+                f"🇰🇭 **{name_kh}**\n"
+                f"🇬🇧 **{name_en}**\n"
+                f"📅 **កាលបរិច្ឆេទ៖** `{holiday_date}`\n\n"
+                "----------------------------------------\n"
+                "✨ *សូមជូនពរឱ្យទទួលបានការសម្រាកលំហែកាយយ៉ាងសប្បាយរីករាយ និងមានសុវត្ថិភាពគ្រប់ៗគ្នា!*"
+            )
 
+            # បង្កើតសន្លឹកទិន្នន័យការពារការផ្ញើសារស្ទួន (Set)
+            target_chats = set()
+            target_groups = set()
+
+            # 🔍 ទាញយក ID ឆាតរបស់លោកគ្រូ-អ្នកគ្រូទាំងអស់ (Teacher Chat)
+            teachers_res = supabase.table("teachers").select("telegram_id").execute()
+            if teachers_res.data:
+                for t in teachers_res.data:
+                    if t.get('telegram_id'): 
+                        target_chats.add(str(t['telegram_id']))
+
+            # 🔍 ស្កែនទាញយក ID ឆាតរបស់អាណាព្យាបាល/សិស្ស និងគ្រុបថ្នាក់ (Student, Parent & Groups)
+            students_res = supabase.table("students").select("parent_telegram_id", "group_chat_id").execute()
+            if students_res.data:
+                for s in students_res.data:
+                    if s.get('parent_telegram_id'): 
+                        target_chats.add(str(s['parent_telegram_id']))
+                    if s.get('group_chat_id') and str(s['group_chat_id']).strip() not in ["", "null", "None"]: 
+                        target_groups.add(str(s['group_chat_id']).strip())
+
+            # 📡 ៣. ដំណើរការបាញ់សារចេញទៅកាន់គ្រប់ទិសទី (ALL, Teacher, Student Chat & Groups)
+            count_private = 0
+            count_group = 0
+            
+            # ផ្ញើទៅឆាតបុគ្គល (គ្រូ + អាណាព្យាបាល/សិស្ស)
+            for p_id in target_chats:
+                try:
+                    bot.send_message(int(p_id), announcement_msg, parse_mode='Markdown')
+                    count_private += 1
+                except Exception: 
+                    pass
+                    
+            # បាញ់ចូលគ្រប់ Group ថ្នាក់រៀន
+            for g_id in target_groups:
+                try:
+                    bot.send_message(int(g_id), announcement_msg, parse_mode='Markdown')
+                    count_group += 1
+                except Exception: 
+                    pass
+
+            # លុបសាររង់ចាំ (Loading)
+            try: bot.delete_message(chat_id, loading_msg.message_id)
+            except: pass
+
+            # 🎉 បង្ហាញរបាយការណ៍ជោគជ័យជូន Admin
+            success_report = (
+                f"🟢 **[ ប្រកាសថ្ងៃឈប់សម្រាកសាលារួចរាល់! ]**\n"
+                f"--------------------------------------------------\n"
+                f"🎉 **ឱកាសបុណ្យ៖** `{name_kh}` ({name_en})\n"
+                f"📅 **ថ្ងៃឈប់សម្រាក៖** `{holiday_date}`\n"
+                f"📲 **ផ្ញើទៅឆាតឯកជន (គ្រូ/សិស្ស/មេបា)៖** `{count_private}` នាក់\n"
+                f"🏫 **បាញ់ចូល Groups ថ្នាក់រៀនទាំងអស់៖** `{count_group}` គ្រុប\n"
+                f"--------------------------------------------------\n"
+                f"💡 _ប្រព័ន្ធបានផ្សព្វផ្សាយដំណឹងទៅកាន់សមាជិករួមសាលា ALL រួចរាល់_"
+            )
+            bot.send_message(chat_id, success_report, parse_mode='Markdown')
+
+        except Exception as e:
+            print(f"❌ Holiday broadcast error: {e}")
+            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
+    
     # ===================================================================================
     # 👨‍🏫 មុខងារ៖ បង្កើតគណនីគ្រូថ្មី (/addteacher)
     # ===================================================================================
