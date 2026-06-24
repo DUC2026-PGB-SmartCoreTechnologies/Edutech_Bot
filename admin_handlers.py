@@ -78,44 +78,50 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
 
 # ===================================================================================
-    # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
-    # ===================================================================================
-    @bot.callback_query_handler(func=lambda call: True)
-    def handle_all_system_inline_clicks(call):
-        chat_id = call.message.chat.id
-        action = call.data
-        user_id = call.from_user.id
-        
-        try:
-            # 🟢 ១. បើជាប៊ូតុងរបស់សិស្ស/គ្រូ គឺឱ្យរត់ទៅ Function រៀងៗខ្លួនភ្លាមៗ
-            if action.startswith('view_students:'):
-                callback_view_students(call)
-                return
-            elif action.startswith('view_dept:'):
-                callback_view_dept(call)
-                return
-            elif action.startswith('view_teacher:'):
-                callback_view_teacher(call)
-                return
-            elif action.startswith('grh_'):
-                handle_grade_button_click(call)
-                return
-            elif action.startswith('ack_'):
-                bot.answer_callback_query(call.id, "✅ លោកអ្នកបានចុចទទួលដឹងឮរួចរាល់!", show_alert=True)
-                return
+# 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
+# ===================================================================================
+@bot.callback_query_handler(func=lambda call: True)
+def handle_all_system_inline_clicks(call):
+    chat_id = call.message.chat.id
+    action = call.data
+    user_id = call.from_user.id
+    
+    # ១. បិទសញ្ញាវង់វិលៗនៅលើប៊ូតុងភ្លាមៗ (សំខាន់ខ្លាំងដើម្បីកុំឱ្យស្ងាត់)
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
 
-            # 🔒 ២. បើចុចចំប៊ូតុង Dashboard របស់ Admin
-            admin_buttons = [
-                "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
-                "addstu", "adddiscipline", "grade", "addnotice", "addteacher", "checkreq", "approve",
-                "adm_guide_stats", "adm_guide_analytics", "adm_guide_addstu", "adm_guide_discipline",
-                "adm_guide_grade", "adm_guide_notice", "adm_guide_addteacher", "adm_guide_checkreq", "adm_guide_approve"
-            ]
+    try:
+        # 🟢 កម្រិតទី ១៖ បើជាប៊ូតុងសកម្មភាពរហ័សរបស់សិស្ស/គ្រូ គឺឱ្យរត់ទៅ Function ភ្លាមៗ (មិនបាច់ឆែក Admin)
+        if action.startswith('view_students:'):
+            callback_view_students(call)
+            return
+        elif action.startswith('view_dept:'):
+            callback_view_dept(call)
+            return
+        elif action.startswith('view_teacher:'):
+            callback_view_teacher(call)
+            return
+        elif action.startswith('grh_'):
+            handle_grade_button_click(call)
+            return
+        elif action.startswith('ack_'):
+            bot.answer_callback_query(call.id, "✅ លោកអ្នកបានចុចទទួលដឹងឮរួចរាល់!", show_alert=True)
+            return
 
-            if action in admin_buttons:
-                is_valid_admin = False
+        # 🔒 កម្រិតទី ២៖ បើចុចចំប៊ូតុងគ្រប់គ្រងប្រព័ន្ធ (Admin Buttons) ត្រូវឆែកសិទ្ធិជាមុនសិន
+        admin_buttons = [
+            "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
+            "addstu", "adddiscipline", "grade", "addnotice", "addteacher", "checkreq", "approve",
+            "adm_guide_stats", "adm_guide_analytics", "adm_guide_addstu", "adm_guide_discipline",
+            "adm_guide_grade", "adm_guide_notice", "adm_guide_addteacher", "adm_guide_checkreq", "adm_guide_approve"
+        ]
+
+        if action in admin_buttons:
+            is_valid_admin = False
             
-            # 🔄 ជំហានទី ១៖ ឆែកក្នុងតារាង "admins" តាមវិធីទាញមកធៀប String (ការពារបញ្ហាប្រភេទ int8)
+            # 🔄 ជំហានទី ២.១៖ ឆែកក្នុងតារាង "admins" តាមវិធីទាញមកធៀប String (ការពារបញ្ហាប្រភេទ int8)
             try:
                 admin_check = supabase.table("admins").select("telegram_id, role").execute()
                 if admin_check.data:
@@ -128,7 +134,7 @@ def register_admin_teacher_handlers(bot, supabase):
             except Exception as e:
                 print(f"⚠️ Error checking admins table: {e}")
 
-            # 🔄 ជំហានទី ២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users"
+            # 🔄 ជំហានទី ២.២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users"
             if not is_valid_admin:
                 try:
                     user_check = supabase.table("users").select("telegram_id, role").execute()
@@ -147,26 +153,38 @@ def register_admin_teacher_handlers(bot, supabase):
                 bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
                 return
 
-                # 📊 ៣. ដំណើរការហៅមុខងារ Wizard តាមគ្រាប់ចុចនៅពេលដាតាបេសអនុញ្ញាត
-                if action in ["school_stats", "adm_guide_stats"]: school_stats_command(call.message)
-                elif action in ["hw_analytics", "adm_guide_analytics"]: hw_analytics_command(call.message)
-                elif action == "list_classes": list_classes_command(call.message)
-                elif action == "list_teachers": list_teachers_command(call.message)
-                elif action == "list_depts": list_depts_command(call.message)
-                elif action in ["addstu", "adm_guide_addstu"]: add_student_wizard(call.message)
-                elif action in ["adddiscipline", "adm_guide_discipline"]: add_discipline_wizard(call.message)
-                elif action in ["grade", "adm_guide_grade"]: grade_homework_wizard(call.message)
-                elif action in ["addnotice", "adm_guide_notice"]: add_notice_wizard(call.message)
-                elif action in ["addteacher", "adm_guide_addteacher"]: add_teacher_wizard(call.message)
-                elif action in ["checkreq", "adm_guide_checkreq"]: check_requests_command(call.message)
-                elif action in ["approve", "adm_guide_approve"]:
-                    bot.send_message(chat_id, "🟢 **[ របៀបអនុម័ត / Approve សិស្ស ]**\nសូមវាយបញ្ជា៖ `/approve លេខTelegramID, លេខIDសិស្ស`", parse_mode='Markdown')
-                
-                bot.answer_callback_query(call.id)
+            # 📊 កម្រិតទី ៣៖ បើដាតាបេសអនុញ្ញាត (ជា Admin ពិតប្រាកដ) ទើបឱ្យហៅមុខងារ Wizard ដំណើរការ
+            if action in ["school_stats", "adm_guide_stats"]: 
+                school_stats_command(call.message)
+            elif action in ["hw_analytics", "adm_guide_analytics"]: 
+                hw_analytics_command(call.message)
+            elif action == "list_classes": 
+                list_classes_command(call.message)
+            elif action == "list_teachers": 
+                list_teachers_command(call.message)
+            elif action == "list_depts": 
+                list_depts_command(call.message)
+            elif action in ["addstu", "adm_guide_addstu"]: 
+                add_student_wizard(call.message)
+            elif action in ["adddiscipline", "adm_guide_discipline"]: 
+                add_discipline_wizard(call.message)
+            elif action in ["grade", "adm_guide_grade"]: 
+                grade_homework_wizard(call.message)
+            elif action in ["addnotice", "adm_guide_notice"]: 
+                add_notice_wizard(call.message)
+            elif action in ["addteacher", "adm_guide_addteacher"]: 
+                add_teacher_wizard(call.message)
+            elif action in ["checkreq", "adm_guide_checkreq"]: 
+                check_requests_command(call.message)
+            elif action in ["approve", "adm_guide_approve"]:
+                bot.send_message(chat_id, "🟢 **[ របៀបអនុម័ត / Approve សិស្ស ]**\nសូមវាយបញ្ជា៖ `/approve លេខTelegramID, លេខIDសិស្ស`", parse_mode='Markdown')
 
-        except Exception as e:
+    except Exception as e:
+        print(f"❌ System Error inside callback handler: {e}")
+        try:
             bot.answer_callback_query(call.id, f"❌ កំហុសប្រព័ន្ធប៊ូតុង៖ {e}", show_alert=True)
-
+        except Exception:
+            pass
 
     # ========================================================
     # 👩‍🏫 មុខងារ៖ គ្រូ Login ផ្ទៀងផ្ទាត់ជាមួយ ID & Password
