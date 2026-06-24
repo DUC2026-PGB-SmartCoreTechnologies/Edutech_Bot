@@ -103,26 +103,32 @@ def register_admin_teacher_handlers(bot, supabase):
             if action in admin_buttons:
                 is_valid_admin = False
                 
-                # 🔄 ឆែកក្នុងតារាង "admins"
+                # 🔄 ដំណោះស្រាយ៖ បំប្លែង user_id ទៅជាលេខ (int) ឱ្យស៊ីគ្នាជាមួយប្រភេទដាតាបេស Supabase
                 try:
-                    admin_check = supabase.table("admins").select("role").eq("telegram_id", user_id).execute()
+                    db_user_id = int(user_id) 
+                except:
+                    db_user_id = user_id
+
+                # 🔄 ជំហានទី ១៖ ឆែកក្នុងតារាង "admins"
+                try:
+                    admin_check = supabase.table("admins").select("role").eq("telegram_id", db_user_id).execute()
                     if admin_check.data and str(admin_check.data[0].get('role')).upper() in ['SUPER_ADMIN', 'ADMIN']:
                         is_valid_admin = True
                 except:
                     pass
 
-                # 🔄 ឆែកក្នុងតារាង "users"
+                # 🔄 ជំហានទី ២៖ បើមិនឃើញ ឆែកក្នុងតារាង "users"
                 if not is_valid_admin:
                     try:
-                        user_check = supabase.table("users").select("role").eq("telegram_id", user_id).execute()
+                        user_check = supabase.table("users").select("role").eq("telegram_id", db_user_id).execute()
                         if user_check.data and str(user_check.data[0].get('role')).upper() in ['SUPER_ADMIN', 'ADMIN']:
                             is_valid_admin = True
                     except:
                         pass
 
-                # ❌ បើមិនមែន Admin គឺបដិសេធ
+                # ❌ បើរកមិនឃើញសិទ្ធិ Admin ទេ គឺបដិសេធ
                 if not is_valid_admin:
-                    bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
+                    bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិប្រើប្រាស់មុខងារនេះឡើយ។", show_alert=True)
                     return
 
                 # 📊 ហៅមុខងារបញ្ជា (លែងគាំង លែងលោតសារក្រហម)
