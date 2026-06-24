@@ -1,186 +1,116 @@
 import telebot
 from telebot import types
 from datetime import datetime
-
-# 💡 register_admin_teacher_handlers ទទួល bot និង supabase ពី main.py រួចជាស្រេច
+# ===================================================================================
+# 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
+# ===================================================================================
 def register_admin_teacher_handlers(bot, supabase):
-    
-    # ========================================================
-    # 👑 មុខងារ៖ Admin វាយ /login (🔐 ប្រព័ន្ធចាក់សោរស្វ័យប្រវត្តិ បើមាន Admin រួចហើយ ហាមអ្នកផ្សេងលួចចូល)
-    # ========================================================
-    @bot.message_handler(commands=['login'])
-    def admin_secret_login(message):
-        chat_id = message.chat.id
-        user_id = message.from_user.id
-        
+
+    @bot.callback_query_handler(func=lambda call: True)
+    def handle_all_system_inline_clicks(call):
+        chat_id = call.message.chat.id
+        action = call.data
+        user_id = call.from_user.id
+
+        # ១. បិទសញ្ញាវង់វិលៗនៅលើប៊ូតុងភ្លាមៗ (សំខាន់ខ្លាំងដើម្បីកុំឱ្យស្ងាត់)
         try:
-            # 🔍 ជំហានទី ១៖ រត់ទៅឆែកមើលក្នុងដាតាបេស Supabase ថាមាន Admin រួចហើយឬនៅ?
-            admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
-            
-            # 🔒 លក្ខខណ្ឌការពារ៖ បើមាន Admin ក្នុងប្រព័ន្ធរួចហើយ និងមិនមែនជាលេខ ID របស់ Admin ចាស់
-            if admin_check.data:
-                existing_admin_id = admin_check.data[0].get('telegram_id')
-                
-                # បើអ្នកដែលកំពុងវាយនេះ មិនមែនជា Admin ចាស់ទេ គឺចាក់សោរបដិសេធភ្លាម!
-                if str(user_id) != str(existing_admin_id):
-                    bot.reply_to(message, "❌ **សុំទោស!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ。 លោកអ្នកមិនអាច Login ចូលបានឡើយ។")
-                    print(f"⚠️ [SECURITY BLOCK] ID {user_id} ព្យាយាមលួច Login ត្រួតលើ Admin ចាស់ ID {existing_admin_id}!")
-                    return
-            
-        except Exception as e:
-            print(f"❌ Supabase Admin Lock Check Error: {e}")
-            bot.reply_to(message, "❌ 有បញ្ហាបច្ចេកទេសក្នុងការឆែកមើលសិទ្ធិ។")
-            return
+            bot.answer_callback_query(call.id)
+        except Exception:
+            pass
 
-        # 🔄 កាត់យកពាក្យសម្ងាត់ដែលវាយបន្ទាប់ពី /login
-        text_input = message.text.strip()[6:].strip()
-        ADMIN_MASTER_PASSWORD = "DUC_Admin@2026"
-        
-        if not text_input:
-            bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយ Admin!**\nសូមវាយ៖ `/login លេខសម្ងាត់មេ`", parse_mode='Markdown')
-            return
-            
-        if text_input != ADMIN_MASTER_PASSWORD:
-            bot.reply_to(message, "❌ **លេខសម្ងាត់ Admin មិនត្រឹមត្រូវទេ!** សូមព្យាយាមម្ដងទៀត។")
-            return
-            
         try:
-            # 🔄 អាប់ដេត ឬរក្សាទុកសិទ្ធិ Admin ចូល Supabase ករណីឆ្លងផុតរបាំងការពារខាងលើ
-            supabase.table("users").upsert({
-                "telegram_id": user_id,
-                "role": "ADMIN",
-                "status": "APPROVED",
-                "language": "km"
-            }, on_conflict="telegram_id").execute()
-            
-            # 🎛️ បង្កើតផ្ទាំងប៊ូតុង Menu ពណ៌ប្រផេះធំៗ (លោតពីក្រោមអេក្រង់) សម្រាប់ Admin
-            admin_menu = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-            admin_menu.add("➕ បង្កើតគណនីគ្រូ", "📋 មើលបញ្ជីគ្រូ","👁️ ផ្ទាំងសិស្ស (Student Panel)", "🔙 ចាកចេញ (Logout)")
-            
-            # 📢 ផ្ញើសារប្រកាសជោគជ័យ
-            bot.send_message(chat_id, "🟢 **ផ្ទៀងផ្ទាត់សិទ្ធិ Admin មេជោគជ័យ!**", parse_mode='Markdown')
-            
-            # 💡 ហៅផ្ទាំងរូបភាព Panel Dashboard ពី helpers.py
-            import helpers
-            helpers.send_admin_panel(bot, chat_id)
-            
-            # 📤 បាញ់បញ្ចេញប៊ូតុង Menu ជូន Admin
-            bot.send_message(
-                chat_id, 
-                "👑 **លោកអ្នកក៏អាចប្រើប្រាស់ ប៊ូតុង Menu ខាងក្រោម នេះបានផងដែរ៖**", 
-                reply_markup=admin_menu,
-                parse_mode='Markdown'
-            )
-            print(f"👑 [ADMIN LOGIN LIVE] Admin Telegram ID: {user_id} Verified and Saved.")
+            # 🟢 កម្រិតទី ១៖ បើជាប៊ូតុងសកម្មភាពរហ័សរបស់សិស្ស/គ្រូ
+            if action.startswith('view_students:'):
+                callback_view_students(call)
+                return
+            elif action.startswith('view_dept:'):
+                callback_view_dept(call)
+                return
+            elif action.startswith('view_teacher:'):
+                callback_view_teacher(call)
+                return
+            elif action.startswith('grh_'):
+                handle_grade_button_click(call)
+                return
+            elif action.startswith('ack_'):
+                bot.answer_callback_query(call.id, "✅ លោកអ្នកបានចុចទទួលដឹងឮរួចរាល់!", show_alert=True)
+                return
+
+            # 🔒 កម្រិតទី ២៖ បើចុចចំប៊ូតុងគ្រប់គ្រងប្រព័ន្ធ (Admin Buttons) ត្រូវឆែកសិទ្ធិជាមុនសិន
+            admin_buttons = [
+                "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
+                "addstu", "adddiscipline", "grade", "addnotice", "addteacher", "checkreq", "approve",
+                "adm_guide_stats", "adm_guide_analytics", "adm_guide_addstu", "adm_guide_discipline",
+                "adm_guide_grade", "adm_guide_notice", "adm_guide_addteacher", "adm_guide_checkreq", "adm_guide_approve"
+            ]
+
+            if action in admin_buttons:
+                is_valid_admin = False
                 
-        except Exception as e:
-            print(f"❌ Admin Login Error: {e}")
-            bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
-@bot.callback_query_handler(func=lambda call: True)
-def handle_all_system_inline_clicks(call):
-    chat_id = call.message.chat.id
-    action = call.data
-    user_id = call.from_user.id
-
-    # ១. បិទសញ្ញាវង់វិលៗនៅលើប៊ូតុងភ្លាមៗ
-    try:
-        bot.answer_callback_query(call.id)
-    except Exception:
-        pass
-
-    try:
-        # 🟢 កម្រិតទី ១៖ បើជាប៊ូតុងសកម្មភាពរហ័សរបស់សិស្ស/គ្រូ
-        if action.startswith('view_students:'):
-            callback_view_students(call)
-            return
-        elif action.startswith('view_dept:'):
-            callback_view_dept(call)
-            return
-        elif action.startswith('view_teacher:'):
-            callback_view_teacher(call)
-            return
-        elif action.startswith('grh_'):
-            handle_grade_button_click(call)
-            return
-        elif action.startswith('ack_'):
-            bot.answer_callback_query(call.id, "✅ លោកអ្នកបានចុចទទួលដឹងឮរួចរាល់!", show_alert=True)
-            return
-
-        # 🔒 កម្រិតទី ២៖ បើចុចចំប៊ូតុងគ្រប់គ្រងប្រព័ន្ធ (Admin Buttons)
-        admin_buttons = [
-            "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
-            "addstu", "adddiscipline", "grade", "addnotice", "addteacher", "checkreq", "approve",
-            "adm_guide_stats", "adm_guide_analytics", "adm_guide_addstu", "adm_guide_discipline",
-            "adm_guide_grade", "adm_guide_notice", "adm_guide_addteacher", "adm_guide_checkreq", "adm_guide_approve"
-        ]
-
-        if action in admin_buttons:
-            is_valid_admin = False
-            
-            # 🔄 ជំហានទី ២.១៖ ឆែកក្នុងតារាង "admins"
-            try:
-                admin_check = supabase.table("admins").select("telegram_id, role").execute()
-                if admin_check.data:
-                    for row in admin_check.data:
-                        if str(row.get('telegram_id')) == str(user_id):
-                            role = str(row.get('role', '')).upper()
-                            if role in ['SUPER_ADMIN', 'ADMIN']:
-                                is_valid_admin = True
-                                break
-            except Exception as e:
-                print(f"⚠️ Error checking admins table: {e}")
-
-            # 🔄 ជំហានទី ២.២៖ ឆែកក្នុងតារាង "users"
-            if not is_valid_admin:
+                # 🔄 ជំហានទី ២.១៖ ឆែកក្នុងតារាង "admins"
                 try:
-                    user_check = supabase.table("users").select("telegram_id, role").execute()
-                    if user_check.data:
-                        for row in user_check.data:
+                    admin_check = supabase.table("admins").select("telegram_id, role").execute()
+                    if admin_check.data:
+                        for row in admin_check.data:
                             if str(row.get('telegram_id')) == str(user_id):
                                 role = str(row.get('role', '')).upper()
                                 if role in ['SUPER_ADMIN', 'ADMIN']:
                                     is_valid_admin = True
                                     break
                 except Exception as e:
-                    print(f"⚠️ Error checking users table: {e}")
+                    print(f"⚠️ Error checking admins table: {e}")
 
-            # ❌ បដិសេធសិទ្ធិ
-            if not is_valid_admin:
-                bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយBound។", show_alert=True)
-                return
+                # 🔄 ជំហានទី ២.២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users"
+                if not is_valid_admin:
+                    try:
+                        user_check = supabase.table("users").select("telegram_id, role").execute()
+                        if user_check.data:
+                            for row in user_check.data:
+                                if str(row.get('telegram_id')) == str(user_id):
+                                    role = str(row.get('role', '')).upper()
+                                    if role in ['SUPER_ADMIN', 'ADMIN']:
+                                        is_valid_admin = True
+                                        break
+                    except Exception as e:
+                        print(f"⚠️ Error checking users table: {e}")
 
-            # 📊 កម្រិតទី ៣៖ ដំណើរការមុខងារ
-            if action in ["school_stats", "adm_guide_stats"]: 
-                school_stats_command(call.message)
-            elif action in ["hw_analytics", "adm_guide_analytics"]: 
-                hw_analytics_command(call.message)
-            elif action == "list_classes": 
-                list_classes_command(call.message)
-            elif action == "list_teachers": 
-                list_teachers_command(call.message)
-            elif action == "list_depts": 
-                list_depts_command(call.message)
-            elif action in ["addstu", "adm_guide_addstu"]: 
-                add_student_wizard(call.message)
-            elif action in ["adddiscipline", "adm_guide_discipline"]: 
-                add_discipline_wizard(call.message)
-            elif action in ["grade", "adm_guide_grade"]: 
-                grade_homework_wizard(call.message)
-            elif action in ["addnotice", "adm_guide_notice"]: 
-                add_notice_wizard(call.message)
-            elif action in ["addteacher", "adm_guide_addteacher"]: 
-                add_teacher_wizard(call.message)
-            elif action in ["checkreq", "adm_guide_checkreq"]: 
-                check_requests_command(call.message)
-            elif action in ["approve", "adm_guide_approve"]:
-                bot.send_message(chat_id, "🟢 **[ របៀបអនុម័ត / Approve សិស្ស ]**\nសូមវាយបញ្ជា៖ `/approve លេខTelegramID, លេខIDសិស្ស`", parse_mode='Markdown')
+                # ❌ បើឆែកដាតាបេសទាំង ២ តារាងហើយ នៅតែមិនមែនជា Admin គឺបដិសេធសិទ្ធិ
+                if not is_valid_admin:
+                    bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ Bound。", show_alert=True)
+                    return
 
-    except Exception as e:
-        print(f"❌ System Error inside callback handler: {e}")
-        try:
-            bot.answer_callback_query(call.id, f"❌ កំហុសប្រព័ន្ធប៊ូតុង៖ {e}", show_alert=True)
-        except Exception:
-            pass
+                # 📊 កម្រិតទី ៣៖ បើដាតាបេសអនុញ្ញាត ទើបឱ្យហៅមុខងារ Wizard ដំណើរការ
+                if action in ["school_stats", "adm_guide_stats"]: 
+                    school_stats_command(call.message)
+                elif action in ["hw_analytics", "adm_guide_analytics"]: 
+                    hw_analytics_command(call.message)
+                elif action == "list_classes": 
+                    list_classes_command(call.message)
+                elif action == "list_teachers": 
+                    list_teachers_command(call.message)
+                elif action == "list_depts": 
+                    list_depts_command(call.message)
+                elif action in ["addstu", "adm_guide_addstu"]: 
+                    add_student_wizard(call.message)
+                elif action in ["adddiscipline", "adm_guide_discipline"]: 
+                    add_discipline_wizard(call.message)
+                elif action in ["grade", "adm_guide_grade"]: 
+                    grade_homework_wizard(call.message)
+                elif action in ["addnotice", "adm_guide_notice"]: 
+                    add_notice_wizard(call.message)
+                elif action in ["addteacher", "adm_guide_addteacher"]: 
+                    add_teacher_wizard(call.message)
+                elif action in ["checkreq", "adm_guide_checkreq"]: 
+                    check_requests_command(call.message)
+                elif action in ["approve", "adm_guide_approve"]:
+                    bot.send_message(chat_id, "🟢 **[ របៀបអនុម័ត / Approve សិស្ស ]**\nសូមវាយបញ្ជា៖ `/approve លេខTelegramID, លេខIDសិស្ស`", parse_mode='Markdown')
+
+        except Exception as e:
+            print(f"❌ System Error inside callback handler: {e}")
+            try:
+                bot.answer_callback_query(call.id, f"❌ កំហុសប្រព័ន្ធប៊ូតុង៖ {e}", show_alert=True)
+            except Exception:
+                pass
     # ========================================================
     # 👩‍🏫 មុខងារ៖ គ្រូ Login ផ្ទៀងផ្ទាត់ជាមួយ ID & Password
     # ========================================================
