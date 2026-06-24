@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 from datetime import datetime
-from main import bot  # ថែមបន្ទាត់នេះនៅខាងលើបង្អស់នៃ admin_handlers.py
+
 # 💡 register_admin_teacher_handlers ទទួល bot និង supabase ពី main.py រួចជាស្រេច
 def register_admin_teacher_handlers(bot, supabase):
     
@@ -80,7 +80,7 @@ def register_admin_teacher_handlers(bot, supabase):
 # ===================================================================================
 # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
 # ===================================================================================
-def register_admin_handlers(bot):
+
     
     @bot.callback_query_handler(func=lambda call: True)
     def handle_all_system_inline_clicks(call):
@@ -90,12 +90,12 @@ def register_admin_handlers(bot):
 
     
     # ១. បិទសញ្ញាវង់វិលៗនៅលើប៊ូតុងភ្លាមៗ (សំខាន់ខ្លាំងដើម្បីកុំឱ្យស្ងាត់)
-    try:
+     try:
         bot.answer_callback_query(call.id)
-    except Exception:
+     except Exception:
         pass
 
-    try:
+      try:
         # 🟢 កម្រិតទី ១៖ បើជាប៊ូតុងសកម្មភាពរហ័សរបស់សិស្ស/គ្រូ គឺឱ្យរត់ទៅ Function ភ្លាមៗ (មិនបាច់ឆែក Admin)
         if action.startswith('view_students:'):
             callback_view_students(call)
