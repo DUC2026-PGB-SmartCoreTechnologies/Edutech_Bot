@@ -619,15 +619,32 @@ def register_admin_teacher_handlers(bot, supabase):
             chat_id, 
             f"🇰🇭 ខ្មែរ៖ `{name_kh}`\n🇬🇧 អង់គ្លេស៖ `{name_en}`\n\n👉 **[ជំហាន ៣/៣]** សូមបំពេញ **កាលបរិច្ឆេទឈប់សម្រាក** ៖\n*(លំនាំ៖ ឆ្នាំ-ខែ-ថ្ងៃ ឧទាហរណ៍៖ 2026-11-24)*"
         )
-        bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
+        @bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
         def process_hol_final(message, name_kh, name_en):
-       ​      chat_id = message.chat.id
-             raw_date = message.text.strip()
+            chat_id = message.chat.id
+            raw_date = message.text.strip()
         
-             if not raw_date:
-             sent_msg = bot.send_message(chat_id, "⚠️ **ថ្ងៃខែមិនអាចទទេបានទេ!** សូមបញ្ចូលម្ដងទៀត៖")
-             bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
-             return
+        if not raw_date:
+            sent_msg = bot.send_message(chat_id, "⚠️ **ថ្ងៃខែមិនអាចទទេបានទេ!** សូមបញ្ចូលម្ដងទៀត៖")
+            bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
+            return
+
+        # បន្តកូដដំណើរការនៅទីនេះ...
+        khmer_digits = "០១២៣៤៥៦៧៨៩"
+        english_digits = "0123456789"
+        holiday_date = ""
+        for char in raw_date:
+            if char in khmer_digits:
+                holiday_date += english_digits[khmer_digits.index(char)]
+            else:
+                holiday_date += char
+                
+        # ផ្នែកដែលនៅសល់...
+        try:
+            _supabase.table("holidays").insert({"event_name_km": name_kh, "event_name_en": name_en, "holiday_date": holiday_date, "announcement_sent": 1}).execute()
+            _bot.send_message(chat_id, "✅ រក្សាទុកជោគជ័យ!")
+        except Exception as e:
+            _bot.send_message(chat_id, f"❌ Error: {e}")
 
         # 🔄 ដំណោះស្រាយ៖ អនុគមន៍បំប្លែងលេខខ្មែរ ទៅជាលេខអង់គ្លេសដោយស្វ័យប្រវត្តិ
         khmer_digits = "០១២៣៤៥៦៧៨៩"
