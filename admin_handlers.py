@@ -5,20 +5,11 @@ from datetime import datetime
 # បង្កើតអថេរជាសកលសម្រាប់ងាយស្រួលទាញទិន្នន័យ
 _bot = None
 _supabase = None
-
-# ===================================================================================
-# 💡 register_admin_teacher_handlers ទទួល bot និង supabase ពី main.py រួចជាស្រេច
-# ===================================================================================
-def register_admin_teacher_handlers(bot, supabase):
-    global _bot, _supabase
-    _bot = bot
-    _supabase = supabase
-
-    # ========================================================
+# ========================================================
     # 👑 មុខងារ៖ Admin វាយ /login
     # ========================================================
     @bot.message_handler(commands=['login'])
-​    def admin_secret_login(message):
+    def admin_secret_login(message):
         chat_id = message.chat.id
         user_id = message.from_user.id
         
@@ -64,8 +55,7 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, "👑 **លោកអ្នកក៏អាចប្រើប្រាស់ ប៊ូតុង Menu ខាងក្រោម នេះបានផងដែរ៖**", reply_markup=admin_menu, parse_mode='Markdown')
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
-
-    # ===================================================================================
+# ===================================================================================
     # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង Inline Dashboard ទាំងអស់
     # ===================================================================================
     @bot.callback_query_handler(func=lambda call: True)
