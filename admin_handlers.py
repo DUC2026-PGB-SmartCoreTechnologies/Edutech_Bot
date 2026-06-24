@@ -928,13 +928,14 @@ def callback_view_dept(call):
         else: msg += " └ (មិនទាន់មានមុខវិជ្ជាសកម្ម)\n"
         _bot.send_message(call.message.chat.id, msg)
     except Exception as e: _bot.send_message(call.message.chat.id, f"❌ Error: {e}")
-
 def callback_view_teacher(call):
     try:
         target_teacher_id = call.data.split(':', 1)[1]
         teacher_info = _supabase.table("teachers").select("*").eq("teacher_id", target_teacher_id).execute()
-        if not teacher_info.data: return
+        if not teacher_info.data: 
+            return
         t_data = teacher_info.data[0]
         msg = f"📋 [ ប្រវត្តិគ្រូ ID: {target_teacher_id} ]\n=========================\n👤 ឈ្មោះ៖ {t_data.get('name')}\n🔑 លេខសម្ងាត់៖ {t_data.get('password')}"
         _bot.send_message(call.message.chat.id, msg)
-    except Exception as e: _bot.send_message(call.message.chat.id, f"❌ Error: {e}")
+    except Exception as e: 
+        _bot.send_message(call.message.chat.id, f"❌ Error: {e}")
