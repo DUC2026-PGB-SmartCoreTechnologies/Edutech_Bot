@@ -2,13 +2,9 @@ import telebot
 from telebot import types
 from datetime import datetime
 
-# បង្កើតអថេរជាសកលសម្រាប់ងាយស្រួលទាញទិន្នន័យ
 _bot = None
 _supabase = None
 
-# ========================================================
-# 👑 មុខងារ៖ Admin វាយ /login
-# ========================================================
 def register_admin_teacher_handlers(bot, supabase):
     global _bot, _supabase
     _bot = bot
@@ -16,51 +12,42 @@ def register_admin_teacher_handlers(bot, supabase):
 
     @bot.message_handler(commands=['login'])
     def admin_secret_login(message):
-        chat_id = message.chat.id
-        user_id = message.from_user.id
-        
         try:
             admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
-            if admin_check.data:
-                existing_admin_id = admin_check.data[0].get('telegram_id')
-                if str(user_id) != str(existing_admin_id):
-                    bot.reply_to(message, "❌ **សុំទោស!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ។")
-                    return
+            if admin_check.data and str(message.from_user.id) != str(admin_check.data[0].get('telegram_id')):
+                bot.reply_to(message, "❌ ប្រព័ន្ធមាន Admin មេរួចរាល់ហើយ។")
+                return
+            if message.text.strip()[6:].strip() != "DUC_Admin@2026":
+                bot.reply_to(message, "❌ លេខសម្ងាត់ខុស!")
+                return
+            supabase.table("users").upsert({"telegram_id": message.from_user.id, "role": "ADMIN", "status": "APPROVED", "language": "km"}, on_conflict="telegram_id").execute()
+            bot.send_message(message.chat.id, "🟢 ផ្ទៀងផ្ទាត់ជោគជ័យ!")
         except Exception as e:
-            print(f"❌ Supabase Admin Lock Check Error: {e}")
-            bot.reply_to(message, "❌ មានបញ្ហាបច្ចេកទេសក្នុងការឆែកមើលសិទ្ធិ។")
-            return
+            bot.reply_to(message, f"❌ Error: {e}")
 
-        text_input = message.text.strip()[6:].strip()
-        ADMIN_MASTER_PASSWORD = "DUC_Admin@2026"
-        
-        if not text_input:
-            bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយ Admin!**\nសូមវាយ៖ `/login លេខសម្ងាត់មេ`", parse_mode='Markdown')
-            return
-            
-        if text_input != ADMIN_MASTER_PASSWORD:
-            bot.reply_to(message, "❌ **លេខសម្ងាត់ Admin មិនត្រឹមត្រូវទេ!**")
-            return
-            
+    @bot.callback_query_handler(func=lambda call: True)
+    def handle_all_system_inline_clicks(call):
+        if call.data == "addholiday":
+            add_holiday_wizard(call.message)
+
+    @bot.message_handler(commands=['addholiday'])
+    def add_holiday_wizard(message):
+        sent_msg = bot.send_message(message.chat.id, "🏖️ ឈ្មោះថ្ងៃឈប់សម្រាក (ខ្មែរ)៖")
+        bot.register_next_step_handler(sent_msg, process_hol_kh)
+
+    def process_hol_kh(message):
+        bot.register_next_step_handler(bot.send_message(message.chat.id, "👉 ឈ្មោះ (អង់គ្លេស)៖"), process_hol_en, message.text.strip())
+
+    def process_hol_en(message, name_kh):
+        bot.register_next_step_handler(bot.send_message(message.chat.id, "👉 កាលបរិច្ឆេទ (YYYY-MM-DD)៖"), process_hol_final, name_kh, message.text.strip())
+
+    def process_hol_final(message, name_kh, name_en):
+        date_str = message.text.strip().replace("០", "0").replace("១", "1").replace("២", "2").replace("៣", "3").replace("៤", "4").replace("៥", "5").replace("៦", "6").replace("៧", "7").replace("៨", "8").replace("៩", "9")
         try:
-            supabase.table("users").upsert({
-                "telegram_id": user_id,
-                "role": "ADMIN",
-                "status": "APPROVED",
-                "language": "km"
-            }, on_conflict="telegram_id").execute()
-            
-            admin_menu = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-            admin_menu.add("➕ បង្កើតគណនីគ្រូ", "📋 មើលបញ្ជីគ្រូ","👁️ ផ្ទាំងសិស្ស (Student Panel)", "🔙 ចាកចេញ (Logout)")
-            
-            bot.send_message(chat_id, "🟢 **ផ្ទៀងផ្ទាត់សិទ្ធិ Admin មេជោគជ័យ!**", parse_mode='Markdown')
-            
-            import helpers
-            helpers.send_admin_panel(bot, chat_id)
-            
-            bot.send_message(chat_id, "👑 **លោកអ្នកក៏អាចប្រើប្រាស់ ប៊ូតុង Menu ខាងក្រោម នេះបានផងដែរ៖**", reply_markup=admin_menu, parse_mode='Markdown')
+            _supabase.table("holidays").insert({"event_name_km": name_kh, "event_name_en": name_en, "holiday_date": date_str, "announcement_sent": 1}).execute()
+            _bot.send_message(message.chat.id, "✅ បញ្ចប់ជោគជ័យ!")
         except Exception as e:
-            bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
+            _bot.send_message(message.chat.id, f"❌ Error: {e}")
 # ===================================================================================
     # 🎛️ មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង Inline Dashboard ទាំងអស់
     # ===================================================================================
