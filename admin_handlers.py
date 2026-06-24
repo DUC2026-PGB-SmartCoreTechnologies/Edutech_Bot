@@ -5,6 +5,7 @@ from datetime import datetime
 # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
 # ===================================================================================
 def register_admin_teacher_handlers(bot, supabase):
+
     # ========================================================
     # 👑 មុខងារ៖ Admin វាយ /login
     # ========================================================
@@ -77,8 +78,11 @@ def register_admin_teacher_handlers(bot, supabase):
             print(f"❌ Admin Login Error: {e}")
             bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
 
-  ​   @bot.callback_query_handler(func=lambda call: True)
-     def handle_all_system_inline_clicks(call):
+    # ===================================================================================
+    # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (តម្រឹមជួរ Spaces សុទ្ធ ១០០%)
+    # ===================================================================================
+    @bot.callback_query_handler(func=lambda call: True)
+    def handle_all_system_inline_clicks(call):
         chat_id = call.message.chat.id
         action = call.data
         user_id = call.from_user.id
@@ -118,7 +122,7 @@ def register_admin_teacher_handlers(bot, supabase):
             if action in admin_buttons:
                 is_valid_admin = False
                 
-                # 🔄 ជំហានទី ២.១៖ ឆែកចំៗក្នុងតារាង "admins" ដោយប្រើ .eq() (លឿន និងច្បាស់លាស់)
+                # 🔄 ជំហានទី ២.១៖ ឆែកចំៗក្នុងតារាង "admins" តាមរយៈ .eq()
                 try:
                     admin_check = supabase.table("admins").select("role").eq("telegram_id", user_id).execute()
                     if admin_check.data:
@@ -139,7 +143,7 @@ def register_admin_teacher_handlers(bot, supabase):
                     except Exception as e:
                         print(f"⚠️ Error checking users table: {e}")
 
-                # ❌ បើឆែកដាតាបេសទាំង ២ តារាងហើយ នៅតែមិនមែនជា Admin គឺបដិសេធសិទ្ធិ
+                # ❌ បើរកមិនឃើញសិទ្ធិ Admin ទេ គឺបដិសេធ
                 if not is_valid_admin:
                     bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
                     return
