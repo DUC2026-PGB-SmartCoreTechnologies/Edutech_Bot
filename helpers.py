@@ -102,6 +102,7 @@ def send_admin_panel(bot, chat_id):
     btn_discipline = types.InlineKeyboardButton("⚖️ កត់ត្រាវិន័យ", callback_data="adddiscipline")
     btn_grade = types.InlineKeyboardButton("✍️ ដាក់ពិន្ទុសិស្ស", callback_data="grade")
     btn_notice = types.InlineKeyboardButton("📢 ថែមសេចក្ដីប្រកាស", callback_data="addnotice")
+    btn_holiday = types.InlineKeyboardButton("🏖️ ថែមថ្ងៃឈប់សម្រាក", callback_data="addholiday") # បានបន្ថែមឱ្យត្រូវតាមទម្រង់ប្រព័ន្ធបាញ់សាររបស់លោកគ្រូ
     
     # 📥 រៀបចំដាក់គ្រាប់ចុចចូលក្នុងផ្ទាំង (Layout Grid)
     markup.add(btn_stats, btn_analytics)
@@ -111,6 +112,7 @@ def send_admin_panel(bot, chat_id):
     markup.add(btn_addstu, btn_addteacher)
     markup.add(btn_grade, btn_notice)
     markup.add(btn_discipline)
+    markup.add(btn_discipline, btn_holiday)
     
     # 📤 ១. បាញ់ចេញផ្ទាំង Dashboard និងគ្រាប់ចុច Inline Markup
     bot.send_message(chat_id, admin_msg, reply_markup=markup, parse_mode='Markdown')
