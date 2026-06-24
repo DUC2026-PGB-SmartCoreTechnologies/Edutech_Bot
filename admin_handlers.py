@@ -76,26 +76,20 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ Admin Login Error: {e}")
             bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
-
-# ===================================================================================
-# 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
-# ===================================================================================
-
-    
-  @bot.callback_query_handler(func=lambda call: True)
+            @bot.callback_query_handler(func=lambda call: True)
 def handle_all_system_inline_clicks(call):
     chat_id = call.message.chat.id
     action = call.data
     user_id = call.from_user.id
 
-    # ១. បិទសញ្ញាវង់វិលៗនៅលើប៊ូតុងភ្លាមៗ (សំខាន់ខ្លាំងដើម្បីកុំឱ្យស្ងាត់)
+    # ១. បិទសញ្ញាវង់វិលៗនៅលើប៊ូតុងភ្លាមៗ
     try:
         bot.answer_callback_query(call.id)
     except Exception:
         pass
 
     try:
-        # 🟢 កម្រិតទី ១៖ បើជាប៊ូតុងសកម្មភាពរហ័សរបស់សិស្ស/គ្រូ គឺឱ្យរត់ទៅ Function ភ្លាមៗ (មិនបាច់ឆែក Admin)
+        # 🟢 កម្រិតទី ១៖ បើជាប៊ូតុងសកម្មភាពរហ័សរបស់សិស្ស/គ្រូ
         if action.startswith('view_students:'):
             callback_view_students(call)
             return
@@ -112,7 +106,7 @@ def handle_all_system_inline_clicks(call):
             bot.answer_callback_query(call.id, "✅ លោកអ្នកបានចុចទទួលដឹងឮរួចរាល់!", show_alert=True)
             return
 
-        # 🔒 កម្រិតទី ២៖ បើចុចចំប៊ូតុងគ្រប់គ្រងប្រព័ន្ធ (Admin Buttons) ត្រូវឆែកសិទ្ធិជាមុនសិន
+        # 🔒 កម្រិតទី ២៖ បើចុចចំប៊ូតុងគ្រប់គ្រងប្រព័ន្ធ (Admin Buttons)
         admin_buttons = [
             "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
             "addstu", "adddiscipline", "grade", "addnotice", "addteacher", "checkreq", "approve",
@@ -123,7 +117,7 @@ def handle_all_system_inline_clicks(call):
         if action in admin_buttons:
             is_valid_admin = False
             
-            # 🔄 ជំហានទី ២.១៖ ឆែកក្នុងតារាង "admins" តាមវិធីទាញមកធៀប String (ការពារបញ្ហាប្រភេទ int8)
+            # 🔄 ជំហានទី ២.១៖ ឆែកក្នុងតារាង "admins"
             try:
                 admin_check = supabase.table("admins").select("telegram_id, role").execute()
                 if admin_check.data:
@@ -136,7 +130,7 @@ def handle_all_system_inline_clicks(call):
             except Exception as e:
                 print(f"⚠️ Error checking admins table: {e}")
 
-            # 🔄 ជំហានទី ២.២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users"
+            # 🔄 ជំហានទី ២.២៖ ឆែកក្នុងតារាង "users"
             if not is_valid_admin:
                 try:
                     user_check = supabase.table("users").select("telegram_id, role").execute()
@@ -150,12 +144,12 @@ def handle_all_system_inline_clicks(call):
                 except Exception as e:
                     print(f"⚠️ Error checking users table: {e}")
 
-            # ❌ បើឆែកដាតាបេសទាំង ២ តារាងហើយ នៅតែមិនមែនជា Admin គឺបដិសេធសិទ្ធិ
+            # ❌ បដិសេធសិទ្ធិ
             if not is_valid_admin:
-                bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
+                bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយBound។", show_alert=True)
                 return
 
-            # 📊 កម្រិតទី ៣៖ បើដាតាបេសអនុញ្ញាត (ជា Admin ពិតប្រាកដ) ទើបឱ្យហៅមុខងារ Wizard ដំណើរការ
+            # 📊 កម្រិតទី ៣៖ ដំណើរការមុខងារ
             if action in ["school_stats", "adm_guide_stats"]: 
                 school_stats_command(call.message)
             elif action in ["hw_analytics", "adm_guide_analytics"]: 
@@ -187,7 +181,6 @@ def handle_all_system_inline_clicks(call):
             bot.answer_callback_query(call.id, f"❌ កំហុសប្រព័ន្ធប៊ូតុង៖ {e}", show_alert=True)
         except Exception:
             pass
-
     # ========================================================
     # 👩‍🏫 មុខងារ៖ គ្រូ Login ផ្ទៀងផ្ទាត់ជាមួយ ID & Password
     # ========================================================
