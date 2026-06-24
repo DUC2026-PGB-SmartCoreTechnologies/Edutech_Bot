@@ -628,9 +628,9 @@ def register_admin_teacher_handlers(bot, supabase):
         )
         @bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
         def process_hol_final(message, name_kh, name_en):
-        if not message.text: return
-        chat_id = message.chat.id
-        raw_date = message.text.strip()
+            if not message.text: return
+            chat_id = message.chat.id
+            raw_date = message.text.strip()
         
         # បំប្លែងលេខខ្មែរទៅអង់គ្លេស
         khmer_digits = "០១២៣៤៥៦៧៨៩"
