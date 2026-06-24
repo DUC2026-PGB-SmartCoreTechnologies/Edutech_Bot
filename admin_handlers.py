@@ -76,7 +76,7 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ Admin Login Error: {e}")
             bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
-            @bot.callback_query_handler(func=lambda call: True)
+@bot.callback_query_handler(func=lambda call: True)
 def handle_all_system_inline_clicks(call):
     chat_id = call.message.chat.id
     action = call.data
