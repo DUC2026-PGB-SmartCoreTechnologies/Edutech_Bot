@@ -111,7 +111,7 @@ def send_admin_panel(bot, chat_id):
     markup.add(btn_checkreq, btn_approve)
     markup.add(btn_addstu, btn_addteacher)
     markup.add(btn_grade, btn_notice)
-    markup.add(btn_disciplineុ, btn_holiday)
+    markup.add(btn_discipline, btn_holiday)
     
     
     # 📤 ១. បាញ់ចេញផ្ទាំង Dashboard និងគ្រាប់ចុច Inline Markup
