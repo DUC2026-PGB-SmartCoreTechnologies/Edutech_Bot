@@ -621,13 +621,13 @@ def register_admin_teacher_handlers(bot, supabase):
         )
         bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
         def process_hol_final(message, name_kh, name_en):
-        chat_id = message.chat.id
-        raw_date = message.text.strip()
+       ​      chat_id = message.chat.id
+             raw_date = message.text.strip()
         
-        if not raw_date:
-            sent_msg = bot.send_message(chat_id, "⚠️ **ថ្ងៃខែមិនអាចទទេបានទេ!** សូមបញ្ចូលម្ដងទៀត៖")
-            bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
-            return
+             if not raw_date:
+             sent_msg = bot.send_message(chat_id, "⚠️ **ថ្ងៃខែមិនអាចទទេបានទេ!** សូមបញ្ចូលម្ដងទៀត៖")
+             bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
+             return
 
         # 🔄 ដំណោះស្រាយ៖ អនុគមន៍បំប្លែងលេខខ្មែរ ទៅជាលេខអង់គ្លេសដោយស្វ័យប្រវត្តិ
         khmer_digits = "០១២៣៤៥៦៧៨៩"
