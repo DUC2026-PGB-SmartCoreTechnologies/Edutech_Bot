@@ -624,20 +624,31 @@ def register_admin_teacher_handlers(bot, supabase):
             f"🇰🇭 ខ្មែរ៖ `{name_kh}`\n🇬🇧 អង់គ្លេស៖ `{name_en}`\n\n👉 **[ជំហាន ៣/៣]** សូមបំពេញ **កាលបរិច្ឆេទឈប់សម្រាក** ៖\n*(លំនាំ៖ ឆ្នាំ-ខែ-ថ្ងៃ ឧទាហរណ៍៖ 2026-11-24)*"
         )
         bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
-
-    def process_hol_final(message, name_kh, name_en):
+        def process_hol_final(message, name_kh, name_en):
         chat_id = message.chat.id
-        holiday_date = message.text.strip()
+        raw_date = message.text.strip()
         
-        if not holiday_date:
-            sent_msg = bot.send_message(chat_id, "⚠️ **ថ្ងៃខែមិនអាចទទេបានទេ!** សូមវាយបញ្ចូលម្ដងទៀត៖")
+        if not raw_date:
+            sent_msg = bot.send_message(chat_id, "⚠️ **ថ្ងៃខែមិនអាចទទេបានទេ!** សូមបញ្ចូលម្ដងទៀត៖")
             bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
             return
-            
+
+        # 🔄 ដំណោះស្រាយ៖ អនុគមន៍បំប្លែងលេខខ្មែរ ទៅជាលេខអង់គ្លេសដោយស្វ័យប្រវត្តិ
+        khmer_digits = "០១២៣៤៥៦៧៨៩"
+        english_digits = "0123456789"
+        
+        holiday_date = ""
+        for char in raw_date:
+            if char in khmer_digits:
+                # បើចំលេខខ្មែរ ប្តូរទៅលេខអង់គ្លេស
+                holiday_date += english_digits[khmer_digits.index(char)]
+            else:
+                holiday_date += char
+                
         loading_msg = bot.send_message(chat_id, "⏳ កំពុងកត់ត្រាចូលដាតាបេស និងរៀបចំប្រព័ន្ធបាញ់ដំណឹងឈប់សម្រាករួមសាលា...")
         
         try:
-            # 🎯 ១. កត់ត្រាទិន្នន័យចូលតារាង "holidays" ក្នុង Supabase
+            # 🎯 ១. កត់ត្រាទិន្នន័យចូលតារាង "holidays" ក្នុង Supabase (ប្រើប្រាស់ថ្ងៃខែដែលបំប្លែងរួច)
             supabase.table("holidays").insert({
                 "event_name_km": name_kh, 
                 "event_name_en": name_en, 
@@ -648,7 +659,7 @@ def register_admin_teacher_handlers(bot, supabase):
             # ២. បង្កើតទម្រង់អត្ថបទសេចក្ដីជូនដំណឹងដើម្បី បាញ់សាររួម (Broadcast ALL)
             announcement_msg = (
                 "🚨 **[ សេចក្ដីជូនដំណឹង៖ ថ្ងៃឈប់សម្រាកសាលា DUC ]**\n\n"
-                "សូមជម្រាបជូន លោកគ្រូ អ្នកគ្រូ សិស្សានុសិស្ស និងអាណាព្យាបាលទាំងអស់មេត្តាជ្រាបថា សាលានឹងមានការ**ឈប់សម្រាក**ក្នុងឱកាស៖\n\n"
+                "សូមជម្រាបជូន លោកគ្រូ អ្នកគ្រូ សิស្សានុសិស្ស និងអាណាព្យាបាលទាំងអស់មេត្តាជ្រាបថា សាលានឹងមានការ**ឈប់សម្រាក**ក្នុងឱកាស៖\n\n"
                 f"🇰🇭 **{name_kh}**\n"
                 f"🇬🇧 **{name_en}**\n"
                 f"📅 **កាលបរិច្ឆេទ៖** `{holiday_date}`\n\n"
@@ -673,7 +684,7 @@ def register_admin_teacher_handlers(bot, supabase):
                     if s.get('group_chat_id') and str(s['group_chat_id']).strip() not in ["", "null", "None"]: 
                         target_groups.add(str(s['group_chat_id']).strip())
 
-            # 📡 ៣. ដំណើរការបាញ់សារចេញ (ALL)
+            # 📡 ៣. ដំណើរការបាញ់សារចេញ (ALL, Teacher, Student & Groups)
             count_private = count_group = 0
             for p_id in target_chats:
                 try:
@@ -703,6 +714,8 @@ def register_admin_teacher_handlers(bot, supabase):
 
         except Exception as e:
             print(f"❌ Holiday broadcast error: {e}")
+            try: bot.delete_message(chat_id, loading_msg.message_id)
+            except: pass
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
     # ===================================================================================
     # 👨‍🏫 មុខងារ៖ បង្កើតគណនីគ្រូថ្មី (/addteacher)
