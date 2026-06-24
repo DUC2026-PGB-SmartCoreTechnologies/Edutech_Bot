@@ -82,20 +82,19 @@ def register_admin_teacher_handlers(bot, supabase):
 # ===================================================================================
 
     
-    @bot.callback_query_handler(func=lambda call: True)
-    def handle_all_system_inline_clicks(call):
-        chat_id = call.message.chat.id
-        action = call.data
-        user_id = call.from_user.id
+  @bot.callback_query_handler(func=lambda call: True)
+def handle_all_system_inline_clicks(call):
+    chat_id = call.message.chat.id
+    action = call.data
+    user_id = call.from_user.id
 
-    
     # ១. បិទសញ្ញាវង់វិលៗនៅលើប៊ូតុងភ្លាមៗ (សំខាន់ខ្លាំងដើម្បីកុំឱ្យស្ងាត់)
-     try:
+    try:
         bot.answer_callback_query(call.id)
-     except Exception:
+    except Exception:
         pass
 
-      try:
+    try:
         # 🟢 កម្រិតទី ១៖ បើជាប៊ូតុងសកម្មភាពរហ័សរបស់សិស្ស/គ្រូ គឺឱ្យរត់ទៅ Function ភ្លាមៗ (មិនបាច់ឆែក Admin)
         if action.startswith('view_students:'):
             callback_view_students(call)
