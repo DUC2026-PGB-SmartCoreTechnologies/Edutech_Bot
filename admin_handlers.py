@@ -105,23 +105,37 @@ def register_admin_teacher_handlers(bot, supabase):
                 return
 
             # 🔒 ២. បើចុចចំប៊ូតុង Dashboard របស់ Admin
-            if action in [
+            admin_buttons = [
                 "school_stats", "hw_analytics", "list_classes", "list_teachers", "list_depts",
                 "addstu", "adddiscipline", "grade", "addnotice", "addteacher", "checkreq", "approve",
                 "adm_guide_stats", "adm_guide_analytics", "adm_guide_addstu", "adm_guide_discipline",
                 "adm_guide_grade", "adm_guide_notice", "adm_guide_addteacher", "adm_guide_checkreq", "adm_guide_approve"
-            ]:
+            ]
+
+            if action in admin_buttons:
                 is_valid_admin = False
                 
-                # 🔄 ជំហានទី ១៖ រត់ទៅឆែកមើលក្នុងតារាង "admins" ថាជា SUPER_ADMIN ឬ ADMIN ឬទេ (បង្ខំប្រភេទលេខ int)
-                admin_check = supabase.table("admins").select("role").eq("telegram_id", int(user_id)).execute()
-                if admin_check.data and admin_check.data[0].get('role') in ['SUPER_ADMIN', 'ADMIN']:
-                    is_valid_admin = True
-                else:
-                    # 🔄 ជំហានទី ២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users" ក្រែងលោគាត់ដេកនៅទីនោះ
-                    user_check = supabase.table("users").select("role").eq("telegram_id", int(user_id)).execute()
-                    if user_check.data and user_check.data[0].get('role') in ['SUPER_ADMIN', 'ADMIN']:
+                # 🔄 ជំហានទី ១៖ ឆែកតារាង "admins" (សាកល្បងទាំងប្រភេទអក្សរ និងលេខ ដើម្បីការពារការខុស Data Type)
+                admin_check = supabase.table("admins").select("role").eq("telegram_id", str(user_id)).execute()
+                if not admin_check.data:
+                    admin_check = supabase.table("admins").select("role").eq("telegram_id", int(user_id)).execute()
+                    
+                if admin_check.data:
+                    # បំប្លែងទៅជាអក្សរធំទាំងអស់ ការពារករណីក្នុង database វាយអក្សរតូច (ឧ. admin, Super_Admin)
+                    role = str(admin_check.data[0].get('role', '')).upper()
+                    if role in ['SUPER_ADMIN', 'ADMIN']:
                         is_valid_admin = True
+                
+                # 🔄 ជំហានទី ២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users"
+                if not is_valid_admin:
+                    user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
+                    if not user_check.data:
+                        user_check = supabase.table("users").select("role").eq("telegram_id", int(user_id)).execute()
+                        
+                    if user_check.data:
+                        role = str(user_check.data[0].get('role', '')).upper()
+                        if role in ['SUPER_ADMIN', 'ADMIN']:
+                            is_valid_admin = True
 
                 # ❌ បើឆែកដាតាបេសទាំង ២ តារាងហើយ នៅតែមិនមែនជា Admin គឺបដិសេធសិទ្ធិ
                 if not is_valid_admin:
