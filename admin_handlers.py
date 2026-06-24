@@ -113,7 +113,7 @@ def register_admin_teacher_handlers(bot, supabase):
             ]
 
             if action in admin_buttons:
-            is_valid_admin = False
+                is_valid_admin = False
             
             # 🔄 ជំហានទី ១៖ ឆែកក្នុងតារាង "admins" តាមវិធីទាញមកធៀប String (ការពារបញ្ហាប្រភេទ int8)
             try:
