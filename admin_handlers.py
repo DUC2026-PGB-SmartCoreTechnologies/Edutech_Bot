@@ -581,39 +581,18 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ Broadcast process error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសក្នុងការបាញ់សារ៖** `{e}`")
-    # ========================================================
-    # 🏖️ មុខងារ៖ ថែមថ្ងៃឈប់សម្រាកសាលា (/addholiday) - ទម្រង់ Wizard Steps
+            # ========================================================
+    # 🏖️ មុខងារ៖ ថែមថ្ងៃឈប់សម្រាកសាលា (/addholiday) - (លុបការឆែកសិទ្ធិចោល ១០០%)
     # ========================================================
     @bot.message_handler(commands=['addholiday'])
     def add_holiday_wizard(message):
         chat_id = message.chat.id
-        user_id = message.from_user.id
         
-        # 🔒 របាំងការពារ៖ ផ្ទៀងផ្ទាត់សិទ្ធិ Admin ត្រឹមតែ ១ តារាង "users" គត់ (ខ្លី សាមញ្ញ និងមានសុវត្ថិភាព)
-        try:
-            is_admin = False
-            
-            # 🔄 បំប្លែង user_id ទៅជា int ឱ្យត្រូវតាមប្រភេទដាតាបេស Supabase
-            try:
-                db_user_id = int(user_id)
-            except:
-                db_user_id = user_id
-
-            # 🔍 ស្កែនរកតួនាទីក្នុងតារាង users តែមួយគត់
-            user_check = supabase.table("users").select("role").eq("telegram_id", db_user_id).execute()
-            if user_check.data:
-                current_role = str(user_check.data[0].get('role', '')).upper()
-                if current_role in ['SUPER_ADMIN', 'ADMIN']:
-                    is_admin = True
-                    
-            if not is_admin:
-                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិប្រើប្រាស់មុខងារនេះឡើយ។")
-                return
-        except Exception as e:
-            print(f"⚠️ Security check error for holiday: {e}")
-            return
-
-        sent_msg = bot.send_message(chat_id, "🏖️ **[ថែមថ្ងៃឈប់សម្រាក - ជំហាន ១/៣]**\n\n👉 សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាខ្មែរ** ៖\n*(ឧទាហរណ៍៖ ពិធីបុណ្យអុំទូក)*")
+        # 🟢 បើកចំហរ៖ មិនបាច់ឆែកសិទ្ធិអ្វីទាំងអស់ រត់ទៅជំហានទី ១ ភ្លាមៗ
+        sent_msg = bot.send_message(
+            chat_id, 
+            "🏖️ **[ថែមថ្ងៃឈប់សម្រាក - ជំហាន ១/៣]**\n\n👉 សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាខ្មែរ** ៖\n*(ឧទាហរណ៍៖ ពិធីបុណ្យអុំទូក)*"
+        )
         bot.register_next_step_handler(sent_msg, process_hol_kh)
 
     def process_hol_kh(message):
@@ -621,11 +600,14 @@ def register_admin_teacher_handlers(bot, supabase):
         name_kh = message.text.strip()
         
         if not name_kh:
-            sent_msg = bot.send_message(chat_id, "⚠️ ឈ្មោះបុណ្យមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            sent_msg = bot.send_message(chat_id, "⚠️ **ឈ្មោះបុណ្យមិនអាចទទេបានទេ!** សូមវាយបញ្ចូលម្ដងទៀត៖")
             bot.register_next_step_handler(sent_msg, process_hol_kh)
             return
             
-        sent_msg = bot.send_message(chat_id, f"🇰🇭 ឈ្មោះពិធីបុណ្យ៖ `{name_kh}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាអង់គ្លេស** ៖\n*(ឧទាហរណ៍៖ Water Festival)*")
+        sent_msg = bot.send_message(
+            chat_id, 
+            f"🇰🇭 ឈ្មោះពិធីបុណ្យ៖ `{name_kh}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាអង់គ្លេស** ៖\n*(ឧទាហរណ៍៖ Water Festival)*"
+        )
         bot.register_next_step_handler(sent_msg, process_hol_en, name_kh)
 
     def process_hol_en(message, name_kh):
@@ -633,11 +615,14 @@ def register_admin_teacher_handlers(bot, supabase):
         name_en = message.text.strip()
         
         if not name_en:
-            sent_msg = bot.send_message(chat_id, "⚠️ ឈ្មោះភាសាអង់គ្លេសមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            sent_msg = bot.send_message(chat_id, "⚠️ **ឈ្មោះភាសាអង់គ្លេសមិនអាចទទេបានទេ!** សូមវាយបញ្ចូលម្ដងទៀត៖")
             bot.register_next_step_handler(sent_msg, process_hol_en, name_kh)
             return
             
-        sent_msg = bot.send_message(chat_id, f"🇰🇭 ខ្មែរ៖ `{name_kh}`\n🇬🇧 អង់គ្លេស៖ `{name_en}`\n\n👉 **[ជំហាន ៣/៣]** សូមបំពេញ **កាលបរិច្ឆេទឈប់សម្រាក** *(លំនាំ៖ ឆ្នាំ-ខែ-ថ្ងៃ ឧទាហរណ៍៖ 2026-11-24)*៖")
+        sent_msg = bot.send_message(
+            chat_id, 
+            f"🇰🇭 ខ្មែរ៖ `{name_kh}`\n🇬🇧 អង់គ្លេស៖ `{name_en}`\n\n👉 **[ជំហាន ៣/៣]** សូមបំពេញ **កាលបរិច្ឆេទឈប់សម្រាក** ៖\n*(លំនាំ៖ ឆ្នាំ-ខែ-ថ្ងៃ ឧទាហរណ៍៖ 2026-11-24)*"
+        )
         bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
 
     def process_hol_final(message, name_kh, name_en):
@@ -645,14 +630,14 @@ def register_admin_teacher_handlers(bot, supabase):
         holiday_date = message.text.strip()
         
         if not holiday_date:
-            sent_msg = bot.send_message(chat_id, "⚠️ ថ្ងៃខែមិនអាចទទេបានទេ! សូមវាយបញ្ចូលម្ដងទៀត៖")
+            sent_msg = bot.send_message(chat_id, "⚠️ **ថ្ងៃខែមិនអាចទទេបានទេ!** សូមវាយបញ្ចូលម្ដងទៀត៖")
             bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
             return
             
         loading_msg = bot.send_message(chat_id, "⏳ កំពុងកត់ត្រាចូលដាតាបេស និងរៀបចំប្រព័ន្ធបាញ់ដំណឹងឈប់សម្រាករួមសាលា...")
         
         try:
-            # ១. កត់ត្រាទិន្នន័យចូលតារាង "holidays"
+            # 🎯 ១. កត់ត្រាទិន្នន័យចូលតារាង "holidays" ក្នុង Supabase
             supabase.table("holidays").insert({
                 "event_name_km": name_kh, 
                 "event_name_en": name_en, 
