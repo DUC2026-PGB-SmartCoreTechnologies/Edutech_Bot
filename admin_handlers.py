@@ -5,6 +5,77 @@ from datetime import datetime
 # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
 # ===================================================================================
 def register_admin_teacher_handlers(bot, supabase):
+    # ========================================================
+    # 👑 មុខងារ៖ Admin វាយ /login
+    # ========================================================
+    @bot.message_handler(commands=['login'])
+    def admin_secret_login(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
+        
+        try:
+            # 🔍 ជំហានទី ១៖ រត់ទៅឆែកមើលក្នុងដាតាបេស Supabase ថាមាន Admin រួចហើយឬនៅ?
+            admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
+            
+            # 🔒 លក្ខខណ្ឌការពារ៖ បើមាន Admin ក្នុងប្រព័ន្ធរួចហើយ និងមិនមែនជាលេខ ID របស់ Admin ចាស់
+            if admin_check.data:
+                existing_admin_id = admin_check.data[0].get('telegram_id')
+                
+                # បើអ្នកដែលកំពុងវាយនេះ មិនមែនជា Admin ចាស់ទេ គឺចាក់សោរបដិសេធភ្លាម!
+                if str(user_id) != str(existing_admin_id):
+                    bot.reply_to(message, "❌ **សុំទោស!** ប្រព័ន្ធគ្រប់គ្រងសាលា DUC មាន Admin មេរួចរាល់ហើយ។ លោកអ្នកមិនអាច Login ចូលបានឡើយ។")
+                    print(f"⚠️ [SECURITY BLOCK] ID {user_id} ព្យាយាមលួច Login ត្រួតលើ Admin ចាស់ ID {existing_admin_id}!")
+                    return
+            
+        except Exception as e:
+            print(f"❌ Supabase Admin Lock Check Error: {e}")
+            bot.reply_to(message, "❌ មានបញ្ហាបច្ចេកទេសក្នុងការឆែកមើលសិទ្ធិ។")
+            return
+
+        # 🔄 កាត់យកពាក្យសម្ងាត់ដែលវាយបន្ទាប់ពី /login
+        text_input = message.text.strip()[6:].strip()
+        ADMIN_MASTER_PASSWORD = "DUC_Admin@2026"
+        
+        if not text_input:
+            bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយ Admin!**\nសូមវាយ៖ `/login លេខសម្ងាត់មេ`", parse_mode='Markdown')
+            return
+            
+        if text_input != ADMIN_MASTER_PASSWORD:
+            bot.reply_to(message, "❌ **លេខសម្ងាត់ Admin មិនត្រឹមត្រូវទេ!** សូមព្យាយាមម្ដងទៀត។")
+            return
+            
+        try:
+            # 🔄 អាប់ដេត ឬរក្សាទុកសិទ្ធិ Admin ចូល Supabase ករណីឆ្លងផុតរបាំងការពារខាងលើ
+            supabase.table("users").upsert({
+                "telegram_id": user_id,
+                "role": "ADMIN",
+                "status": "APPROVED",
+                "language": "km"
+            }, on_conflict="telegram_id").execute()
+            
+            # 🎛️ បង្កើតផ្ទាំងប៊ូតុង Menu ពណ៌ប្រផេះធំៗ (លោតពីក្រោមអេក្រង់) សម្រាប់ Admin
+            admin_menu = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+            admin_menu.add("➕ បង្កើតគណនីគ្រូ", "📋 មើលបញ្ជីគ្រូ","👁️ ផ្ទាំងសិស្ស (Student Panel)", "🔙 ចាកចេញ (Logout)")
+            
+            # 📢 ផ្ញើសារប្រកាសជោគជ័យ
+            bot.send_message(chat_id, "🟢 **ផ្ទៀងផ្ទាត់សិទ្ធិ Admin មេជោគជ័យ!**", parse_mode='Markdown')
+            
+            # 💡 ហៅផ្ទាំងរូបភាព Panel Dashboard ពី helpers.py
+            import helpers
+            helpers.send_admin_panel(bot, chat_id)
+            
+            # 📤 បាញ់បញ្ចេញប៊ូតុង Menu ជូន Admin
+            bot.send_message(
+                chat_id, 
+                "👑 **លោកអ្នកក៏អាចប្រើប្រាស់ ប៊ូតុង Menu ខាងក្រោម នេះបានផងដែរ៖**", 
+                reply_markup=admin_menu,
+                parse_mode='Markdown'
+            )
+            print(f"👑 [ADMIN LOGIN LIVE] Admin Telegram ID: {user_id} Verified and Saved.")
+                
+        except Exception as e:
+            print(f"❌ Admin Login Error: {e}")
+            bot.reply_to(message, f"❌ មិនអាចបើកផ្ទាំង Admin Panel បានទេ៖ `{e}`")
 
     @bot.callback_query_handler(func=lambda call: True)
     def handle_all_system_inline_clicks(call):
