@@ -5,13 +5,19 @@ from datetime import datetime
 # បង្កើតអថេរជាសកលសម្រាប់ងាយស្រួលទាញទិន្នន័យ
 _bot = None
 _supabase = None
+
 # ========================================================
-    # 👑 មុខងារ៖ Admin វាយ /login
-    # ========================================================
-@bot.message_handler(commands=['login'])
-def admin_secret_login(message):
-​​    chat_id = message.chat.id
-    user_id = message.from_user.id
+# 👑 មុខងារ៖ Admin វាយ /login
+# ========================================================
+def register_admin_teacher_handlers(bot, supabase):
+    global _bot, _supabase
+    _bot = bot
+    _supabase = supabase
+
+    @bot.message_handler(commands=['login'])
+    def admin_secret_login(message):
+        chat_id = message.chat.id
+        user_id = message.from_user.id
         
         try:
             admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
