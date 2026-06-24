@@ -581,34 +581,39 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ Broadcast process error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេសក្នុងការបាញ់សារ៖** `{e}`")
-            # ========================================================
-    # 🏖️ មុខងារ៖ ថែមថ្ងៃឈប់សម្រាកសាលា (/addholiday)
+    # ========================================================
+    # 🏖️ មុខងារ៖ ថែមថ្ងៃឈប់សម្រាកសាលា (/addholiday) - ទម្រង់ Wizard Steps
     # ========================================================
     @bot.message_handler(commands=['addholiday'])
     def add_holiday_wizard(message):
         chat_id = message.chat.id
         user_id = message.from_user.id
         
-        # 🔒 របាំងការពារ៖ ផ្ទៀងផ្ទាត់សិទ្ធិ Admin ឱ្យច្បាស់លាស់ពី Database
+        # 🔒 របាំងការពារ៖ ផ្ទៀងផ្ទាត់សិទ្ធិ Admin ត្រឹមតែ ១ តារាង "users" គត់ (ខ្លី សាមញ្ញ និងមានសុវត្ថិភាព)
         try:
             is_admin = False
-            admin_check = supabase.table("admins").select("role").eq("telegram_id", user_id).execute()
-            if admin_check.data and str(admin_check.data[0].get('role')).upper() in ['SUPER_ADMIN', 'ADMIN']:
-                is_admin = True
-                
-            if not is_admin:
-                user_check = supabase.table("users").select("role").eq("telegram_id", user_id).execute()
-                if user_check.data and str(user_check.data[0].get('role')).upper() in ['SUPER_ADMIN', 'ADMIN']:
+            
+            # 🔄 បំប្លែង user_id ទៅជា int ឱ្យត្រូវតាមប្រភេទដាតាបេស Supabase
+            try:
+                db_user_id = int(user_id)
+            except:
+                db_user_id = user_id
+
+            # 🔍 ស្កែនរកតួនាទីក្នុងតារាង users តែមួយគត់
+            user_check = supabase.table("users").select("role").eq("telegram_id", db_user_id).execute()
+            if user_check.data:
+                current_role = str(user_check.data[0].get('role', '')).upper()
+                if current_role in ['SUPER_ADMIN', 'ADMIN']:
                     is_admin = True
                     
             if not is_admin:
-                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
+                bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិប្រើប្រាស់មុខងារនេះឡើយ។")
                 return
         except Exception as e:
             print(f"⚠️ Security check error for holiday: {e}")
             return
 
-        sent_msg = bot.send_message(chat_id, "🏖️ **[ថែមថ្ងៃឈប់សម្រាក - ជំហាន ១/៣]**\n\n👉 សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាខ្មែរ** ៖\n*(ឧទាហរណ៍៖ ពិធីបុណ្យភ្ជុំបិណ្ឌ)*")
+        sent_msg = bot.send_message(chat_id, "🏖️ **[ថែមថ្ងៃឈប់សម្រាក - ជំហាន ១/៣]**\n\n👉 សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាខ្មែរ** ៖\n*(ឧទាហរណ៍៖ ពិធីបុណ្យអុំទូក)*")
         bot.register_next_step_handler(sent_msg, process_hol_kh)
 
     def process_hol_kh(message):
@@ -620,7 +625,7 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.register_next_step_handler(sent_msg, process_hol_kh)
             return
             
-        sent_msg = bot.send_message(chat_id, f"🇰🇭 ឈ្មោះពិធីបុណ្យ៖ `{name_kh}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាអង់គ្លេស** ៖")
+        sent_msg = bot.send_message(chat_id, f"🇰🇭 ឈ្មោះពិធីបុណ្យ៖ `{name_kh}`\n\n👉 **[ជំហាន ២/៣]** សូមបំពេញ **ឈ្មោះថ្ងៃឈប់សម្រាកជាភាសាអង់គ្លេស** ៖\n*(ឧទាហរណ៍៖ Water Festival)*")
         bot.register_next_step_handler(sent_msg, process_hol_en, name_kh)
 
     def process_hol_en(message, name_kh):
@@ -632,7 +637,7 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.register_next_step_handler(sent_msg, process_hol_en, name_kh)
             return
             
-        sent_msg = bot.send_message(chat_id, f"🇰🇭 ខ្មែរ៖ `{name_kh}`\n🇬🇧 អង់គ្លេស៖ `{name_en}`\n\n👉 **[ជំហាន ៣/៣]** សូមបំពេញ **ថ្ងៃឈប់សម្រាក** *(លំនាំ៖ ឆ្នាំ-ខែ-ថ្ងៃ ឧទាហរណ៍៖ 2026-11-24)*៖")
+        sent_msg = bot.send_message(chat_id, f"🇰🇭 ខ្មែរ៖ `{name_kh}`\n🇬🇧 អង់គ្លេស៖ `{name_en}`\n\n👉 **[ជំហាន ៣/៣]** សូមបំពេញ **កាលបរិច្ឆេទឈប់សម្រាក** *(លំនាំ៖ ឆ្នាំ-ខែ-ថ្ងៃ ឧទាហរណ៍៖ 2026-11-24)*៖")
         bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
 
     def process_hol_final(message, name_kh, name_en):
@@ -647,6 +652,7 @@ def register_admin_teacher_handlers(bot, supabase):
         loading_msg = bot.send_message(chat_id, "⏳ កំពុងកត់ត្រាចូលដាតាបេស និងរៀបចំប្រព័ន្ធបាញ់ដំណឹងឈប់សម្រាករួមសាលា...")
         
         try:
+            # ១. កត់ត្រាទិន្នន័យចូលតារាង "holidays"
             supabase.table("holidays").insert({
                 "event_name_km": name_kh, 
                 "event_name_en": name_en, 
@@ -654,6 +660,7 @@ def register_admin_teacher_handlers(bot, supabase):
                 "announcement_sent": 1
             }).execute()
             
+            # ២. បង្កើតទម្រង់អត្ថបទសេចក្ដីជូនដំណឹងដើម្បី បាញ់សាររួម (Broadcast ALL)
             announcement_msg = (
                 "🚨 **[ សេចក្ដីជូនដំណឹង៖ ថ្ងៃឈប់សម្រាកសាលា DUC ]**\n\n"
                 "សូមជម្រាបជូន លោកគ្រូ អ្នកគ្រូ សិស្សានុសិស្ស និងអាណាព្យាបាលទាំងអស់មេត្តាជ្រាបថា សាលានឹងមានការ**ឈប់សម្រាក**ក្នុងឱកាស៖\n\n"
@@ -667,11 +674,13 @@ def register_admin_teacher_handlers(bot, supabase):
             target_chats = set()
             target_groups = set()
 
+            # ទាញយក ID ឆាតរបស់លោកគ្រូ-អ្នកគ្រូទាំងអស់
             teachers_res = supabase.table("teachers").select("telegram_id").execute()
             if teachers_res.data:
                 for t in teachers_res.data:
                     if t.get('telegram_id'): target_chats.add(str(t['telegram_id']))
 
+            # ទាញយក ID ឆាតរបស់អាណាព្យាបាល/សិស្ស និងគ្រុបថ្នាក់
             students_res = supabase.table("students").select("parent_telegram_id", "group_chat_id").execute()
             if students_res.data:
                 for s in students_res.data:
@@ -679,6 +688,7 @@ def register_admin_teacher_handlers(bot, supabase):
                     if s.get('group_chat_id') and str(s['group_chat_id']).strip() not in ["", "null", "None"]: 
                         target_groups.add(str(s['group_chat_id']).strip())
 
+            # 📡 ៣. ដំណើរការបាញ់សារចេញ (ALL)
             count_private = count_group = 0
             for p_id in target_chats:
                 try:
@@ -709,7 +719,6 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ Holiday broadcast error: {e}")
             bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
-   
     # ===================================================================================
     # 👨‍🏫 មុខងារ៖ បង្កើតគណនីគ្រូថ្មី (/addteacher)
     # ===================================================================================
