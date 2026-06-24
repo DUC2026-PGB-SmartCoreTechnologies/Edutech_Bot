@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 from datetime import datetime
-
+from main import bot  # ថែមបន្ទាត់នេះនៅខាងលើបង្អស់នៃ admin_handlers.py
 # 💡 register_admin_teacher_handlers ទទួល bot និង supabase ពី main.py រួចជាស្រេច
 def register_admin_teacher_handlers(bot, supabase):
     
