@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 from datetime import datetime
-
+import threading
 # បង្កើតអថេរជាសកលសម្រាប់ងាយស្រួលទាញទិន្នន័យ
 _bot = None
 _supabase = None
@@ -383,6 +383,13 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"🟢 **បន្ថែមព័ត៌មានកាលវិភាគជោគជ័យ!** ថ្នាក់ {class_level}")
         except Exception as e:
             bot.send_message(chat_id, f"❌ កំហុស៖ `{e}`")
+    def broadcast_message(bot, chat_ids, message_text):
+        def send_task():
+            for chat_id in chat_ids:
+                try:
+                    bot.send_message(int(chat_id), message_text, parse_mode='Markdown')
+                except Exception as e:
+                    print(f"Error sending to {chat_id}: {e}")
 
     # ========================================================
     # ✍️ មុខងារ៖ ដាក់ពិន្ទុ & Feedback ឱ្យសិស្ស (/grade)
