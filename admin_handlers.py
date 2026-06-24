@@ -845,50 +845,54 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(msg_obj.chat.id, response_msg)
         except Exception as e:
             bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
-
-
-# ===================================================================================
-# 🏫 គ្រុបអនុគមន៍ដំណើរការទាញបញ្ជីរាយនាម (ស្ថិតនៅខាងក្រៅ register_admin_handlers ដាច់ស្រឡះ)
+            # ===================================================================================
+# 🏫 គ្រុបអនុគមន៍ដំណើរការទាញបញ្ជីរាយនាម (ស្ថិតនៅកម្រិតក្រៅដាច់ស្រឡះ គ្មានដកឃ្លាដើមជួរទេ)
 # ===================================================================================
 def list_classes_command(msg_obj):
     try:
         students_res = _supabase.table("students").select("class_level").execute()
         distinct_classes = set(s['class_level'].strip().upper() for s in students_res.data if s.get('class_level')) if students_res.data else set()
         if not distinct_classes:
-            _bot.send_message(msg_obj.chat.id, "ℹ️ មិនទាន់មានទិន្នន័យថ្នាក់រៀនសកម្មឡើយ។")
+            _bot.send_message(msg_obj.chat.id, "ℹ️ មិនទាន់មានទិន្នន័យថ្នាក់រៀនសកម្មឡើយបាទ។")
             return
         msg = "🏫 [ បញ្ជីឈ្មោះថ្នាក់រៀនសកម្ម ]\n=========================\n"
-        for i, c in enumerate(sorted(distinct_classes), 1): msg += f"{i}. ថ្នាក់៖ {c}\n"
+        for i, c in enumerate(sorted(distinct_classes), 1): 
+            msg += f"{i}. ថ្នាក់៖ {c}\n"
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(*[types.InlineKeyboardButton(f"📖 ថ្នាក់ {c}", callback_data=f"view_students:{c}") for c in sorted(distinct_classes)])
         _bot.send_message(msg_obj.chat.id, msg, reply_markup=markup)
-    except Exception as e: _bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
+    except Exception as e: 
+        _bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
 
 def list_depts_command(msg_obj):
     try:
         dept_res = _supabase.table("departments").select("id", "department_name").execute()
         if not dept_res.data:
-            _bot.send_message(msg_obj.chat.id, "ℹ️ មិនទាន់មានទិន្នន័យផ្នែកឡើយ។")
+            _bot.send_message(msg_obj.chat.id, "ℹ️ មិនទាន់មានទិន្នន័យផ្នែកឡើយបាទ។")
             return
         msg = "🏢 [ បញ្ជីឈ្មោះផ្នែក/ដេប៉ាតាម៉ង់ ]\n=========================\n"
-        for i, d in enumerate(dept_res.data, 1): msg += f"{i}. ផ្នែក៖ {d.get('department_name')}\n"
+        for i, d in enumerate(dept_res.data, 1): 
+            msg += f"{i}. ផ្នែក៖ {d.get('department_name')}\n"
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(*[types.InlineKeyboardButton(f"🏢 {d.get('department_name')}", callback_data=f"view_dept:{d.get('id')}") for d in dept_res.data])
         _bot.send_message(msg_obj.chat.id, msg, reply_markup=markup)
-    except Exception as e: _bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
+    except Exception as e: 
+        _bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
 
 def list_teachers_command(msg_obj):
     try:
         teachers_res = _supabase.table("teachers").select("teacher_id", "name").execute()
         if not teachers_res.data:
-            _bot.send_message(msg_obj.chat.id, "ℹ️ មិនទាន់មានទិន្នន័យគ្រូឡើយ។")
+            _bot.send_message(msg_obj.chat.id, "ℹ️ មិនទាន់មានទិន្នន័យគ្រូឡើយបាទ។")
             return
         msg = "👨‍🏫 [ បញ្ជីឈ្មោះលោកគ្រូ-អ្នកគ្រូ ]\n=========================\n"
-        for i, t in enumerate(teachers_res.data, 1): msg += f"{i}. {t.get('name')}\n"
+        for i, t in enumerate(teachers_res.data, 1): 
+            msg += f"{i}. {t.get('name')}\n"
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(*[types.InlineKeyboardButton(f"👨‍🏫 {t.get('name')}", callback_data=f"view_teacher:{t.get('teacher_id')}") for t in teachers_res.data])
         _bot.send_message(msg_obj.chat.id, msg, reply_markup=markup)
-    except Exception as e: _bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
+    except Exception as e: 
+        _bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
 
 def school_stats_command(msg_obj):
     try:
@@ -896,13 +900,14 @@ def school_stats_command(msg_obj):
         t_res = _supabase.table("teachers").select("teacher_id", count="exact").execute()
         msg = f"📊 **[ របាយការណ៍ស្ថិតិរួម ]**\n-----------------------\n👨‍🎓 សិស្សសរុប៖ `{s_res.count if s_res.count else 0}` នាក់\n👨‍🏫 គ្រូសរុប៖ `{t_res.count if t_res.count else 0}` នាក់"
         _bot.send_message(msg_obj.chat.id, msg, parse_mode='Markdown')
-    except Exception as e: _bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
+    except Exception as e: 
+        _bot.send_message(msg_obj.chat.id, f"❌ Error: {e}")
 
 def hw_analytics_command(msg_obj):
     _bot.send_message(msg_obj.chat.id, "📈 **កំពុងវិភាគទិន្នន័យ Homework និងគណនាភាគរយអត្រាប្រគល់កិច្ចការ...**")
 
 # ====================================================================================================
-# 📡 ៥. គ្រុបអនុគមន៍ចុចមើលលម្អិត (Callback System Sub-functions)
+# 📡 គ្រុបអនុគមន៍ចុចមើលលម្អិត (Callback System Sub-functions)
 # ====================================================================================================
 def callback_view_students(call):
     try:
@@ -916,7 +921,8 @@ def callback_view_students(call):
             g_kh = "ប្រុស" if stu.get('gender', '').upper() == 'M' else "ស្រី" if stu.get('gender', '').upper() == 'F' else "ចម្រុះ"
             msg += f"{i}. ID: {stu.get('student_id')} | {stu.get('name')} ({g_kh})\n"
         _bot.send_message(call.message.chat.id, msg)
-    except Exception as e: _bot.send_message(call.message.chat.id, f"❌ Error: {e}")
+    except Exception as e: 
+        _bot.send_message(call.message.chat.id, f"❌ Error: {e}")
 
 def callback_view_dept(call):
     try:
@@ -924,10 +930,14 @@ def callback_view_dept(call):
         msg = "🏢 [ បញ្ជីឈ្មោះមុខវិជ្ជាសកម្ម ]\n=========================\n"
         if hw_res.data:
             distinct_subjects = set(hw.get('subject_name').strip() for hw in hw_res.data if hw.get('subject_name'))
-            for i, sub in enumerate(sorted(distinct_subjects), 1): msg += f" └ {i}. មុខវិជ្ជា៖ {sub}\n"
-        else: msg += " └ (មិនទាន់មានមុខវិជ្ជាសកម្ម)\n"
+            for i, sub in enumerate(sorted(distinct_subjects), 1): 
+                msg += f" └ {i}. មុខវិជ្ជា៖ {sub}\n"
+        else: 
+            msg += " └ (មិនទាន់មានមុខវិជ្ជាសកម្ម)\n"
         _bot.send_message(call.message.chat.id, msg)
-    except Exception as e: _bot.send_message(call.message.chat.id, f"❌ Error: {e}")
+    except Exception as e: 
+        _bot.send_message(call.message.chat.id, f"❌ Error: {e}")
+
 def callback_view_teacher(call):
     try:
         target_teacher_id = call.data.split(':', 1)[1]
