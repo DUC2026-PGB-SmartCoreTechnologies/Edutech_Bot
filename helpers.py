@@ -45,7 +45,7 @@ def main_menu(lang):
     return markup
 # ===================================================================================
 # ===================================================================================
-# 🎛️ ផ្ទាំង Menu គ្រាប់ចុច Inline សម្រាប់ Admin (កំណែទម្រង់ដោះស្រាយបញ្ហាសិទ្ធិ និងលុបកូដគាំង)
+# 🎛️ ផ្ទាំង Menu គ្រាប់ចុច Inline សម្រាប់ Admin (កំណែទម្រង់ស៊ីគ្នាជាមួយ admin_handlers.py)
 # ===================================================================================
 def send_admin_panel(bot, chat_id):
     admin_msg = (
@@ -90,7 +90,8 @@ def send_admin_panel(bot, chat_id):
     btn_teachers = types.InlineKeyboardButton("👨‍🏫 បញ្ជីលោកគ្រូ-អ្នកគ្រូ", callback_data="list_teachers")
     
     btn_depts = types.InlineKeyboardButton("🏢 បញ្ជីដេប៉ាតាម៉ង់", callback_data="list_depts")
-    btn_subjects = types.InlineKeyboardButton("📚 មុខវិជ្ជាតាមផ្នែក", callback_data="list_depts") 
+    # កែពី list_depts មកជា list_classes បណ្តោះអាសន្ន ឬទុកចោលកុំឱ្យជាន់គ្នា
+    btn_subjects = types.InlineKeyboardButton("📚 មុខវិជ្ជាតាមផ្នែក", callback_data="list_classes") 
     
     btn_checkreq = types.InlineKeyboardButton("🔍 សិស្សចុះឈ្មោះថ្មី", callback_data="checkreq")
     btn_approve = types.InlineKeyboardButton("🟢 អនុម័ត (Approve) សិស្ស", callback_data="approve")
@@ -114,9 +115,8 @@ def send_admin_panel(bot, chat_id):
     # 📤 ១. បាញ់ចេញផ្ទាំង Dashboard និងគ្រាប់ចុច Inline Markup
     bot.send_message(chat_id, admin_msg, reply_markup=markup, parse_mode='Markdown')
     
-    # 📤 ២. ផ្ញើសារប្រាប់ថាប្រព័ន្ធដំណើរការរួចរាល់ (លុបចោល reply_markup=admin_menu() ដែលបង្កកូដគាំងចោលស្អាតបាត)
+    # 📤 ២. ផ្ញើសារប្រាប់ថាប្រព័ន្ធដំណើរការរួចរាល់
     bot.send_message(chat_id, "🎛️ **ផ្ទាំងបញ្ជាគ្រាប់ចុចរហ័ស (Admin Panel Loaded Successfully)**")
-
 # ========================================================
 # 🔔 ប្រព័ន្ធបាញ់សារដំណឹង (Notification)
 # ========================================================
