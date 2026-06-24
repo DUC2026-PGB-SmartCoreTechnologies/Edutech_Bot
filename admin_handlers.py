@@ -80,11 +80,14 @@ def register_admin_teacher_handlers(bot, supabase):
 # ===================================================================================
 # 🎛️ មុខងារ៖ ស្ទាក់ចាប់រាល់ការចុចប៊ូតុង Inline (ឆែកសិទ្ធិអូតូតាម Database ១០០%)
 # ===================================================================================
-@bot.callback_query_handler(func=lambda call: True)
-def handle_all_system_inline_clicks(call):
-    chat_id = call.message.chat.id
-    action = call.data
-    user_id = call.from_user.id
+def register_admin_handlers(bot):
+    
+    @bot.callback_query_handler(func=lambda call: True)
+    def handle_all_system_inline_clicks(call):
+        chat_id = call.message.chat.id
+        action = call.data
+        user_id = call.from_user.id
+
     
     # ១. បិទសញ្ញាវង់វិលៗនៅលើប៊ូតុងភ្លាមៗ (សំខាន់ខ្លាំងដើម្បីកុំឱ្យស្ងាត់)
     try:
