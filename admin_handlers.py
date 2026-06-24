@@ -113,34 +113,39 @@ def register_admin_teacher_handlers(bot, supabase):
             ]
 
             if action in admin_buttons:
-                is_valid_admin = False
-                
-                # 🔄 ជំហានទី ១៖ ឆែកតារាង "admins" (សាកល្បងទាំងប្រភេទអក្សរ និងលេខ ដើម្បីការពារការខុស Data Type)
-                admin_check = supabase.table("admins").select("role").eq("telegram_id", str(user_id)).execute()
-                if not admin_check.data:
-                    admin_check = supabase.table("admins").select("role").eq("telegram_id", int(user_id)).execute()
-                    
+            is_valid_admin = False
+            
+            # 🔄 ជំហានទី ១៖ ឆែកក្នុងតារាង "admins" តាមវិធីទាញមកធៀប String (ការពារបញ្ហាប្រភេទ int8)
+            try:
+                admin_check = supabase.table("admins").select("telegram_id, role").execute()
                 if admin_check.data:
-                    # បំប្លែងទៅជាអក្សរធំទាំងអស់ ការពារករណីក្នុង database វាយអក្សរតូច (ឧ. admin, Super_Admin)
-                    role = str(admin_check.data[0].get('role', '')).upper()
-                    if role in ['SUPER_ADMIN', 'ADMIN']:
-                        is_valid_admin = True
-                
-                # 🔄 ជំហានទី ២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users"
-                if not is_valid_admin:
-                    user_check = supabase.table("users").select("role").eq("telegram_id", str(user_id)).execute()
-                    if not user_check.data:
-                        user_check = supabase.table("users").select("role").eq("telegram_id", int(user_id)).execute()
-                        
-                    if user_check.data:
-                        role = str(user_check.data[0].get('role', '')).upper()
-                        if role in ['SUPER_ADMIN', 'ADMIN']:
-                            is_valid_admin = True
+                    for row in admin_check.data:
+                        if str(row.get('telegram_id')) == str(user_id):
+                            role = str(row.get('role', '')).upper()
+                            if role in ['SUPER_ADMIN', 'ADMIN']:
+                                is_valid_admin = True
+                                break
+            except Exception as e:
+                print(f"⚠️ Error checking admins table: {e}")
 
-                # ❌ បើឆែកដាតាបេសទាំង ២ តារាងហើយ នៅតែមិនមែនជា Admin គឺបដិសេធសិទ្ធិ
-                if not is_valid_admin:
-                    bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
-                    return
+            # 🔄 ជំហានទី ២៖ បើរកក្នុងតារាង admins មិនឃើញ គឺរត់មកឆែកក្នុងតារាង "users"
+            if not is_valid_admin:
+                try:
+                    user_check = supabase.table("users").select("telegram_id, role").execute()
+                    if user_check.data:
+                        for row in user_check.data:
+                            if str(row.get('telegram_id')) == str(user_id):
+                                role = str(row.get('role', '')).upper()
+                                if role in ['SUPER_ADMIN', 'ADMIN']:
+                                    is_valid_admin = True
+                                    break
+                except Exception as e:
+                    print(f"⚠️ Error checking users table: {e}")
+
+            # ❌ បើឆែកដាតាបេសទាំង ២ តារាងហើយ នៅតែមិនមែនជា Admin គឺបដិសេធសិទ្ធិ
+            if not is_valid_admin:
+                bot.answer_callback_query(call.id, "❌ សកម្មភាពត្រូវបានបដិសេធ! លោកអ្នកមិនមានសិទ្ធិឡើយ។", show_alert=True)
+                return
 
                 # 📊 ៣. ដំណើរការហៅមុខងារ Wizard តាមគ្រាប់ចុចនៅពេលដាតាបេសអនុញ្ញាត
                 if action in ["school_stats", "adm_guide_stats"]: school_stats_command(call.message)
