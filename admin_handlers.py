@@ -11,7 +11,7 @@ _supabase = None
 @bot.message_handler(commands=['login'])
 def admin_secret_login(message):
 ​​    chat_id = message.chat.id
-​​​    user_id = message.from_user.id
+    user_id = message.from_user.id
         
         try:
             admin_check = supabase.table("users").select("telegram_id").eq("role", "ADMIN").execute()
