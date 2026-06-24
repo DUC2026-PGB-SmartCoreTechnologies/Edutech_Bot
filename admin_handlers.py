@@ -173,7 +173,7 @@ def register_admin_teacher_handlers(bot, supabase):
                     
                 # 👤 គ្រុបមុខងារទម្រង់ Wizard Steps (សួរ-ឆ្លើយ ជាជំហានៗ)
                 elif action == "addstu":
-                    add_student_wizard(call.message) # ហៅមុខងារថែមសិស្សដែលបានធ្វើមុននេះ
+                    ​ add_student_wizard(call.message) # ហៅមុខងារថែមសិស្សដែលបានធ្វើមុននេះ
                     
                 elif action == "addteacher":
                     add_teacher_wizard(call.message) # ហៅមុខងារ Wizard ថែមគ្រូថ្មី
