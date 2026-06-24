@@ -628,115 +628,57 @@ def register_admin_teacher_handlers(bot, supabase):
         )
         @bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
         def process_hol_final(message, name_kh, name_en):
-            chat_id = message.chat.id
-            raw_date = message.text.strip()
+        if not message.text: return
+        chat_id = message.chat.id
+        raw_date = message.text.strip()
         
-        if not raw_date:
-            sent_msg = bot.send_message(chat_id, "⚠️ **ថ្ងៃខែមិនអាចទទេបានទេ!** សូមបញ្ចូលម្ដងទៀត៖")
-            bot.register_next_step_handler(sent_msg, process_hol_final, name_kh, name_en)
-            return
-
-        # បន្តកូដដំណើរការនៅទីនេះ...
+        # បំប្លែងលេខខ្មែរទៅអង់គ្លេស
         khmer_digits = "០១២៣៤៥៦៧៨៩"
         english_digits = "0123456789"
-        holiday_date = ""
-        for char in raw_date:
-            if char in khmer_digits:
-                holiday_date += english_digits[khmer_digits.index(char)]
-            else:
-                holiday_date += char
-                
-        # ផ្នែកដែលនៅសល់...
-        try:
-            _supabase.table("holidays").insert({"event_name_km": name_kh, "event_name_en": name_en, "holiday_date": holiday_date, "announcement_sent": 1}).execute()
-            _bot.send_message(chat_id, "✅ រក្សាទុកជោគជ័យ!")
-        except Exception as e:
-            _bot.send_message(chat_id, f"❌ Error: {e}")
+        holiday_date = "".join([english_digits[khmer_digits.index(c)] if c in khmer_digits else c for c in raw_date])
 
-        # 🔄 ដំណោះស្រាយ៖ អនុគមន៍បំប្លែងលេខខ្មែរ ទៅជាលេខអង់គ្លេសដោយស្វ័យប្រវត្តិ
-        khmer_digits = "០១២៣៤៥៦៧៨៩"
-        english_digits = "0123456789"
-        
-        holiday_date = ""
-        for char in raw_date:
-            if char in khmer_digits:
-                # បើចំលេខខ្មែរ ប្តូរទៅលេខអង់គ្លេស
-                holiday_date += english_digits[khmer_digits.index(char)]
-            else:
-                holiday_date += char
-                
-        loading_msg = bot.send_message(chat_id, "⏳ កំពុងកត់ត្រាចូលដាតាបេស និងរៀបចំប្រព័ន្ធបាញ់ដំណឹងឈប់សម្រាករួមសាលា...")
+        loading_msg = bot.send_message(chat_id, "⏳ កំពុងកត់ត្រា និងកំពុងបាញ់ដំណឹងទៅគ្រប់សមាជិក...")
         
         try:
-            # 🎯 ១. កត់ត្រាទិន្នន័យចូលតារាង "holidays" ក្នុង Supabase (ប្រើប្រាស់ថ្ងៃខែដែលបំប្លែងរួច)
+            # ១. Insert ចូល Database
             supabase.table("holidays").insert({
                 "event_name_km": name_kh, 
                 "event_name_en": name_en, 
                 "holiday_date": holiday_date, 
                 "announcement_sent": 1
             }).execute()
-            
-            # ២. បង្កើតទម្រង់អត្ថបទសេចក្ដីជូនដំណឹងដើម្បី បាញ់សាររួម (Broadcast ALL)
+
+            # ២. រៀបចំសារសម្រាប់បាញ់ចេញ
             announcement_msg = (
-                "🚨 **[ សេចក្ដីជូនដំណឹង៖ ថ្ងៃឈប់សម្រាកសាលា DUC ]**\n\n"
-                "សូមជម្រាបជូន លោកគ្រូ អ្នកគ្រូ សิស្សានុសិស្ស និងអាណាព្យាបាលទាំងអស់មេត្តាជ្រាបថា សាលានឹងមានការ**ឈប់សម្រាក**ក្នុងឱកាស៖\n\n"
-                f"🇰🇭 **{name_kh}**\n"
-                f"🇬🇧 **{name_en}**\n"
+                f"🚨 **[ សេចក្ដីជូនដំណឹង៖ ថ្ងៃឈប់សម្រាកសាលា DUC ]**\n\n"
+                f"🇰🇭 **{name_kh}**\n🇬🇧 **{name_en}**\n"
                 f"📅 **កាលបរិច្ឆេទ៖** `{holiday_date}`\n\n"
-                "----------------------------------------\n"
-                "✨ *សូមជូនពរឱ្យទទួលបានការសម្រាកលំហែកាយយ៉ាងសប្បាយរីករាយ និងមានសុវត្ថិភាពគ្រប់ៗគ្នា!*"
+                "✨ *សូមជូនពរឱ្យទទួលបានការសម្រាកលំហែកាយយ៉ាងសប្បាយរីករាយ!*"
             )
 
-            target_chats = set()
-            target_groups = set()
+            # ៣. ទាញយក ID ទាំងអស់ដើម្បីបាញ់សារ
+            target_ids = set()
+            # ទាញយកគ្រូ
+            t_res = supabase.table("teachers").select("telegram_id").execute()
+            for t in t_res.data:
+                if t.get('telegram_id'): target_ids.add(t['telegram_id'])
+            
+            # ទាញយកសិស្ស/អាណាព្យាបាល និង Group ID
+            s_res = supabase.table("students").select("parent_telegram_id", "group_chat_id").execute()
+            for s in s_res.data:
+                if s.get('parent_telegram_id'): target_ids.add(s['parent_telegram_id'])
+                if s.get('group_chat_id'): target_ids.add(s['group_chat_id'])
 
-            # ទាញយក ID ឆាតរបស់លោកគ្រូ-អ្នកគ្រូទាំងអស់
-            teachers_res = supabase.table("teachers").select("telegram_id").execute()
-            if teachers_res.data:
-                for t in teachers_res.data:
-                    if t.get('telegram_id'): target_chats.add(str(t['telegram_id']))
+            # ៤. ហៅមុខងារ Broadcast ដែលប្រើ Threading (មិនធ្វើឱ្យ Bot គាំង)
+            broadcast_message(bot, list(target_ids), announcement_msg)
 
-            # ទាញយក ID ឆាតរបស់អាណាព្យាបាល/សិស្ស និងគ្រុបថ្នាក់
-            students_res = supabase.table("students").select("parent_telegram_id", "group_chat_id").execute()
-            if students_res.data:
-                for s in students_res.data:
-                    if s.get('parent_telegram_id'): target_chats.add(str(s['parent_telegram_id']))
-                    if s.get('group_chat_id') and str(s['group_chat_id']).strip() not in ["", "null", "None"]: 
-                        target_groups.add(str(s['group_chat_id']).strip())
-
-            # 📡 ៣. ដំណើរការបាញ់សារចេញ (ALL, Teacher, Student & Groups)
-            count_private = count_group = 0
-            for p_id in target_chats:
-                try:
-                    bot.send_message(int(p_id), announcement_msg, parse_mode='Markdown')
-                    count_private += 1
-                except: pass
-                    
-            for g_id in target_groups:
-                try:
-                    bot.send_message(int(g_id), announcement_msg, parse_mode='Markdown')
-                    count_group += 1
-                except: pass
-
-            try: bot.delete_message(chat_id, loading_msg.message_id)
-            except: pass
-
-            success_report = (
-                f"🟢 **[ ប្រកាសថ្ងៃឈប់សម្រាកសាលារួចរាល់! ]**\n"
-                f"--------------------------------------------------\n"
-                f"🎉 **ឱកាសបុណ្យ៖** `{name_kh}`\n"
-                f"📅 **ថ្ងៃឈប់សម្រាក៖** `{holiday_date}`\n"
-                f"📲 **ផ្ញើទៅឆាតឯកជន (គ្រូ/សិស្ស/មេបា)៖** `{count_private}` នាក់\n"
-                f"🏫 **បាញ់ចូល Groups ថ្នាក់រៀនទាំងអស់៖** `{count_group}` គ្រុប\n"
-                f"--------------------------------------------------\n"
-            )
-            bot.send_message(chat_id, success_report, parse_mode='Markdown')
-
+            bot.send_message(chat_id, f"✅ រក្សាទុកជោគជ័យ និងបានបាញ់សារទៅកាន់ {len(target_ids)} គោលដៅ!")
+            
         except Exception as e:
-            print(f"❌ Holiday broadcast error: {e}")
+            bot.send_message(chat_id, f"❌ កំហុស៖ {e}")
+        finally:
             try: bot.delete_message(chat_id, loading_msg.message_id)
             except: pass
-            bot.send_message(chat_id, f"❌ **កំហុសបច្ចេកទេស៖** `{e}`")
     # ===================================================================================
     # 👨‍🏫 មុខងារ៖ បង្កើតគណនីគ្រូថ្មី (/addteacher)
     # ===================================================================================
