@@ -43,17 +43,34 @@ def lang_keyboard():
 #         types.KeyboardButton(get_string(lang, 'btn_logout'))
 #     )
 #     return markup
+# def main_menu(lang):
+#     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+#     markup.add(
+#         types.KeyboardButton("📚 Homework"),
+#         types.KeyboardButton("🏖️ School Holidays"),
+#         types.KeyboardButton("📤 Upload Homework"),
+#         types.KeyboardButton("📝 Submit Leave Request"),
+#         types.KeyboardButton("📅 Class Schedule"),
+#         types.KeyboardButton("🌐 Change Language"),
+#         types.KeyboardButton("Logout")
+#     )
+#     return markup
+
 def main_menu(lang):
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    
+    # បន្ថែម ៦ ប៊ូតុងដំបូង (វានឹងរៀបជួរដេក ១ គូៗ ស្អាត)
     markup.add(
         types.KeyboardButton("📚 Homework"),
         types.KeyboardButton("🏖️ School Holidays"),
         types.KeyboardButton("📤 Upload Homework"),
         types.KeyboardButton("📝 Submit Leave Request"),
         types.KeyboardButton("📅 Class Schedule"),
-        types.KeyboardButton("🌐 Change Language"),
-        types.KeyboardButton("Logout")
+        types.KeyboardButton("🌐 Change Language")
     )
+    # បន្ថែមប៊ូតុង Logout មកជួរខាងក្រោមដាច់ដោយឡែក (មើលទៅមានរបៀបជាង)
+    markup.row(types.KeyboardButton("Logout"))
+    
     return markup
 
 # ========================================================
