@@ -542,7 +542,7 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"🔍 កំពុងស្វែងរកកិច្ចការផ្ទះរបស់ថ្នាក់ *{class_target}*...", parse_mode='Markdown')
             
             # 🎯 ឆែកទាញយកពីតារាងពិតរបស់បង `student_submissions` យកតែស្ថានភាព 'PENDING'
-            sub_res = supabase.table("student_submissions").select("*").eq("class_level", class_target).eq("status", "PENDING").execute()
+            sub_res = supabase.table("student_submissions").select("*").eq("class_level", class_target).eq("status", "SUBMITTED").execute()
             
             if not sub_res.data:
                 bot.send_message(chat_id, f"✨ **មិនមានកិច្ចការដែលត្រូវដាក់ពិន្ទុទេ** សម្រាប់ថ្នាក់ {class_target}។")
