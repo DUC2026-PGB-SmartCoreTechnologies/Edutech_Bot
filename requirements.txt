@@ -1,2 +1,5 @@
 pyTelegramBotAPI
 flask
+supabase
+postgrest
+requests
