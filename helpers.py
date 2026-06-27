@@ -52,7 +52,7 @@ def main_menu(lang):
         types.KeyboardButton("📝 Submit Leave Request"),
         types.KeyboardButton("📅 Class Schedule"),
         types.KeyboardButton("🌐 Change Language"),
-        types.KeyboardButton("🔙 Logout")
+        types.KeyboardButton("Logout")
     )
     return markup
 
