@@ -256,7 +256,7 @@ def register_student_handlers(bot, supabase):
             # 🔒 ----------------------------------------------------
             # 🏖️ មុខងារ៖ មើលថ្ងៃឈប់សម្រាក (School Holidays)
             # ----------------------------------------------------
-            elif text in ["🏖️ School Holidays (ថ្ងៃឈប់សម្រាក)", "btn_hol"]:
+            elif text in ["🏖️ School Holidays", "btn_hol"]:
                 try:
                     hol_res = supabase.table("holidays").select("*").order("holiday_date", desc=False).execute()
                     if not hol_res.data:
