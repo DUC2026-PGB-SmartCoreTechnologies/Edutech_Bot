@@ -31,16 +31,28 @@ def lang_keyboard():
 # ========================================================
 # 🎛️ ផ្ទាំង Menu គ្រាប់ចុចសិស្ស (ReplyKeyboardMarkup)
 # ========================================================
+# def main_menu(lang):
+#     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+#     markup.add(
+#         types.KeyboardButton(get_string(lang, 'btn_hw')),
+#         types.KeyboardButton(get_string(lang, 'btn_hol')),
+#         types.KeyboardButton("📤 Upload Homework (ប្រគល់កិច្ចការ)"),
+#         types.KeyboardButton("📝 Submit Leave Request (សុំច្បាប់)"),
+#         types.KeyboardButton(get_string(lang, 'btn_schedule')),
+#         types.KeyboardButton(get_string(lang, 'btn_lang')),
+#         types.KeyboardButton(get_string(lang, 'btn_logout'))
+#     )
+#     return markup
 def main_menu(lang):
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add(
-        types.KeyboardButton(get_string(lang, 'btn_hw')),
-        types.KeyboardButton(get_string(lang, 'btn_hol')),
+        types.KeyboardButton("📚 Homework (កិច្ចការផ្ទះ)"),
+        types.KeyboardButton("🏖️ School Holidays (ថ្ងៃឈប់សម្រាក)"),
         types.KeyboardButton("📤 Upload Homework (ប្រគល់កិច្ចការ)"),
         types.KeyboardButton("📝 Submit Leave Request (សុំច្បាប់)"),
-        types.KeyboardButton(get_string(lang, 'btn_schedule')),
-        types.KeyboardButton(get_string(lang, 'btn_lang')),
-        types.KeyboardButton(get_string(lang, 'btn_logout'))
+        types.KeyboardButton("📅 Class Schedule (តារាងរៀន)"),
+        types.KeyboardButton("🌐 Change Language (ប្តូរភាសា)"),
+        types.KeyboardButton("🔙 Logout (ចាកចេញពីប្រព័ន្ធ)")
     )
     return markup
 
