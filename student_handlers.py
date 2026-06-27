@@ -500,6 +500,7 @@ def register_student_handlers(bot, supabase):
             # 🚪 ----------------------------------------------------
             # 🚀 មុខងារ LOGOUT (ចាកចេញពីប្រព័ន្ធ)
             # ----------------------------------------------------
+            input_text = text.strip() if text else ""
             if text in ["Logout", "btn_logout", "Logout", "ចាកចេញពីប្រព័ន្ធ"]:
                 if user and user.get('student_id'):
                     # កែប្រែទិន្នន័យក្នុងតារាង users ឱ្យទៅជាទទេវិញ
