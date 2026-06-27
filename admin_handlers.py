@@ -521,10 +521,8 @@ def register_admin_teacher_handlers(bot, supabase):
             
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញរបាយការណ៍បានទេ៖ `{e}`")
-
-
-    # ========================================================
-    # 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្ស (PDF/Picture) មកមើល (MATCHED TO DB 100%)
+            # ========================================================
+    # 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្ស (PDF/Picture) មកមើល (FIXED HTTP URL ERROR)
     # ========================================================
     @bot.message_handler(commands=['lh'])
     def teacher_view_submissions(message):
@@ -541,7 +539,7 @@ def register_admin_teacher_handlers(bot, supabase):
         try:
             bot.send_message(chat_id, f"🔍 កំពុងស្វែងរកកិច្ចការផ្ទះរបស់ថ្នាក់ *{class_target}*...", parse_mode='Markdown')
             
-            # 🎯 ឆែកទាញយកពីតារាងពិតរបស់បង `student_submissions` យកតែស្ថានភាព 'PENDING'
+            # 🎯 ឆែកទាញយកពីតារាងពិតរបស់បង `student_submissions` យកស្ថានភាព 'SUBMITTED'
             sub_res = supabase.table("student_submissions").select("*").eq("class_level", class_target).eq("status", "SUBMITTED").execute()
             
             if not sub_res.data:
@@ -551,8 +549,11 @@ def register_admin_teacher_handlers(bot, supabase):
             for sub in sub_res.data:
                 sub_id = sub['id']               
                 s_id = sub['student_id']     
-                file_telegram_id = sub['submitted_file']  # 📎 ទាញយក Telegram File ID ចំៗពី DB បង
+                filename = sub['submitted_file']  # 📁 ទាញយកឈ្មោះហ្វាយ (ឧ. stu_DUC003_xxx.jpg)
                 f_type = sub.get('submitted_type', 'document')     
+                
+                # 🛠️ បង្កើតទៅជា Path ពេញលេញដើម្បីអានហ្វាយពី Server/ម៉ាស៊ីនផ្ទាល់
+                full_file_path = f"student_assignments/{filename}"
                 
                 # បង្កើត Inline Button សម្រាប់ចុចដាក់ពិន្ទុ
                 markup = types.InlineKeyboardMarkup()
@@ -560,14 +561,26 @@ def register_admin_teacher_handlers(bot, supabase):
                 
                 info_text = f"👤 **កូដសិស្ស៖** `{s_id}`\n🏫 **ថ្នាក់៖** `{class_target}`\n📂 ឯកសារភ្ជាប់៖ `{f_type.upper()}`"
                 
-                # 📤 បាញ់ចេញ File ទៅឱ្យគ្រូមើលតាមរយៈ Telegram File ID
-                if 'photo' in f_type.lower():
-                    bot.send_photo(chat_id, photo=file_telegram_id, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                # 📤 ជួសជុល៖ បើកអានហ្វាយ (Open File) ជា Binary រួចផ្ញើទៅ Telegram កុំឱ្យជួប error URL ទៀត
+                if os.path.exists(full_file_path):
+                    with open(full_file_path, 'rb') as file_to_send:
+                        if 'photo' in f_type.lower() or filename.lower().endswith(('jpg', 'jpeg', 'png')):
+                            bot.send_photo(chat_id, photo=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                        else:
+                            bot.send_document(chat_id, document=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
                 else:
-                    bot.send_document(chat_id, document=file_telegram_id, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                    # ករណីរកហ្វាយក្នុង Folder មិនឃើញ ផ្ញើសារប្រាប់គ្រូ និងភ្ជាប់ប៊ូតុងដាក់ពិន្ទុដដែល
+                    bot.send_message(
+                        chat_id, 
+                        f"{info_text}\n⚠️ **រកមិនឃើញឯកសារហ្វាយនៅលើ Server ឡើយ!** (Filename: `{filename}`)", 
+                        parse_mode='Markdown', 
+                        reply_markup=markup
+                    )
                     
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញទិន្នន័យកិច្ចការសិស្សបានទេ៖ `{e}`")
+
+
 
 
     # ========================================================
