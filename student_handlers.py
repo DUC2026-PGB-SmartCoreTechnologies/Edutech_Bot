@@ -497,3 +497,26 @@ def register_student_handlers(bot, supabase):
         except Exception as e:
             print(f"❌ API Error: {e}")
             bot.reply_to(message, f"❌ កំហុស៖ {e}")
+            # 🚪 ----------------------------------------------------
+            # 🚀 មុខងារ LOGOUT របស់សិស្ស / អាណាព្យាបាល (ដាក់បន្ថែម)
+            # ----------------------------------------------------
+            if text in ["❌ Logout (ចាកចេញពីប្រព័ន្ធ)", "btn_logout", "Logout (ចាកចេញពីប្រព័ន្ធ)"]:
+                if user and user.get('student_id'):
+                    # កែប្រែទិន្នន័យក្នុងតារាង users ឱ្យទៅជាទទេវិញ
+                    supabase.table("users").update({
+                        "student_id": None,
+                        "status": "NEW",
+                        "role": "PARENT"
+                    }).eq("telegram_id", user_id).execute()
+                    
+                    # លុបផ្ទាំងប៊ូតុង Menu ចាស់ចោល កុំឱ្យគាត់ចុចទៀត
+                    remove_keyboard = types.ReplyKeyboardRemove()
+                    bot.send_message(
+                        chat_id, 
+                        "🔒 **លោកអ្នកបានចាកចេញពីប្រព័ន្ធជោគជ័យហើយ!**\n\n👉 ប្រសិនបើចង់ចូលប្រើប្រាស់ឡើងវិញ សូមវាយបញ្ចូល **លេខកូដសិស្ស** ម្តងទៀត (ឧទហរណ៍៖ `DUC001`)។", 
+                        parse_mode='Markdown',
+                        reply_markup=remove_keyboard
+                    )
+                else:
+                    bot.send_message(chat_id, "ℹ️ គណនីរបស់អ្នកមិនទាន់បានចូលប្រើប្រាស់ក្នុងប្រព័ន្ធនៅឡើយទេ។")
+                return
