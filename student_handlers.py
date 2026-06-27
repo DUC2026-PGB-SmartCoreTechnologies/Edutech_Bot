@@ -498,9 +498,9 @@ def register_student_handlers(bot, supabase):
             print(f"❌ API Error: {e}")
             bot.reply_to(message, f"❌ កំហុស៖ {e}")
             # 🚪 ----------------------------------------------------
-            # 🚀 មុខងារ LOGOUT របស់សិស្ស / អាណាព្យាបាល (ដាក់បន្ថែម)
+            # 🚀 មុខងារ LOGOUT (ចាកចេញពីប្រព័ន្ធ)
             # ----------------------------------------------------
-            if text in ["❌ Logout (ចាកចេញពីប្រព័ន្ធ)", "btn_logout", "Logout (ចាកចេញពីប្រព័ន្ធ)"]:
+            if text in [helpers.get_string(lang, 'btn_logout'), "btn_logout", "Logout", "ចាកចេញពីប្រព័ន្ធ"]:
                 if user and user.get('student_id'):
                     # កែប្រែទិន្នន័យក្នុងតារាង users ឱ្យទៅជាទទេវិញ
                     supabase.table("users").update({
@@ -513,7 +513,7 @@ def register_student_handlers(bot, supabase):
                     remove_keyboard = types.ReplyKeyboardRemove()
                     bot.send_message(
                         chat_id, 
-                        "🔒 **លោកអ្នកបានចាកចេញពីប្រព័ន្ធជោគជ័យហើយ!**\n\n👉 ប្រសិនបើចង់ចូលប្រើប្រាស់ឡើងវិញ សូមវាយបញ្ចូល **លេខកូដសិស្ស** ម្តងទៀត (ឧទហរណ៍៖ `DUC001`)។", 
+                        "🔒 **លោកអ្នកបានចាកចេញពីប្រព័ន្ធជោគជ័យហើយ!**\n\n👉 ប្រសិនបើចង់ចូលប្រើប្រាស់ឡើងវិញ សូមវាយបញ្ចូល **លេខកូដសិស្ស** ម្តងទៀត (ឧទាហរណ៍៖ `DUC001`)។", 
                         parse_mode='Markdown',
                         reply_markup=remove_keyboard
                     )
