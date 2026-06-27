@@ -46,13 +46,13 @@ def lang_keyboard():
 def main_menu(lang):
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add(
-        types.KeyboardButton("📚 Homework (កិច្ចការផ្ទះ)"),
-        types.KeyboardButton("🏖️ School Holidays (ថ្ងៃឈប់សម្រាក)"),
-        types.KeyboardButton("📤 Upload Homework (ប្រគល់កិច្ចការ)"),
-        types.KeyboardButton("📝 Submit Leave Request (សុំច្បាប់)"),
-        types.KeyboardButton("📅 Class Schedule (តារាងរៀន)"),
-        types.KeyboardButton("🌐 Change Language (ប្តូរភាសា)"),
-        types.KeyboardButton("🔙 Logout (ចាកចេញពីប្រព័ន្ធ)")
+        types.KeyboardButton("📚 Homework"),
+        types.KeyboardButton("🏖️ School Holidays"),
+        types.KeyboardButton("📤 Upload Homework"),
+        types.KeyboardButton("📝 Submit Leave Request"),
+        types.KeyboardButton("📅 Class Schedule"),
+        types.KeyboardButton("🌐 Change Language"),
+        types.KeyboardButton("🔙 Logout")
     )
     return markup
 
