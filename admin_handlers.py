@@ -522,7 +522,7 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញរបាយការណ៍បានទេ៖ `{e}`")
             # ========================================================
-    # 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្ស (PDF/Picture) មកមើល (FIXED HTTP URL ERROR)
+    # 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្សមកមើល (FIXED: USE TELEGRAM FILE ID)
     # ========================================================
     @bot.message_handler(commands=['lh'])
     def teacher_view_submissions(message):
@@ -549,11 +549,8 @@ def register_admin_teacher_handlers(bot, supabase):
             for sub in sub_res.data:
                 sub_id = sub['id']               
                 s_id = sub['student_id']     
-                filename = sub['submitted_file']  # 📁 ទាញយកឈ្មោះហ្វាយ (ឧ. stu_DUC003_xxx.jpg)
+                filename = sub['submitted_file']  # 📎 ត្រង់នេះគឺទាញយក Telegram File ID ចំៗពី DB របស់បង
                 f_type = sub.get('submitted_type', 'document')     
-                
-                # 🛠️ បង្កើតទៅជា Path ពេញលេញដើម្បីអានហ្វាយពី Server/ម៉ាស៊ីនផ្ទាល់
-                full_file_path = f"student_assignments/{filename}"
                 
                 # បង្កើត Inline Button សម្រាប់ចុចដាក់ពិន្ទុ
                 markup = types.InlineKeyboardMarkup()
@@ -561,29 +558,29 @@ def register_admin_teacher_handlers(bot, supabase):
                 
                 info_text = f"👤 **កូដសិស្ស៖** `{s_id}`\n🏫 **ថ្នាក់៖** `{class_target}`\n📂 ឯកសារភ្ជាប់៖ `{f_type.upper()}`"
                 
-                # 📤 ជួសជុល៖ បើកអានហ្វាយ (Open File) ជា Binary រួចផ្ញើទៅ Telegram កុំឱ្យជួប error URL ទៀត
-                if os.path.exists(full_file_path):
-                    with open(full_file_path, 'rb') as file_to_send:
-                        if 'photo' in f_type.lower() or filename.lower().endswith(('jpg', 'jpeg', 'png')):
-                            bot.send_photo(chat_id, photo=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
-                        else:
-                            bot.send_document(chat_id, document=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
-                else:
-                    # ករណីរកហ្វាយក្នុង Folder មិនឃើញ ផ្ញើសារប្រាប់គ្រូ និងភ្ជាប់ប៊ូតុងដាក់ពិន្ទុដដែល
-                    bot.send_message(
-                        chat_id, 
-                        f"{info_text}\n⚠️ **រកមិនឃើញឯកសារហ្វាយនៅលើ Server ឡើយ!** (Filename: `{filename}`)", 
-                        parse_mode='Markdown', 
-                        reply_markup=markup
-                    )
-                    
+                # 📤 បាញ់ចេញឯកសារទៅឱ្យគ្រូមើល តាមរយៈ Telegram File ID ដោយផ្ទាល់ (លែងខ្វល់រឿងខុស Folder លើ Server)
+                try:
+                    # ពិនិត្យមើលតាមប្រភេទឯកសារ បើជា Photo បាញ់ជា Photo បើជា PDF/Doc បាញ់ជា Document
+                    if 'photo' in f_type.lower() or filename.lower().endswith(('jpg', 'jpeg', 'png')):
+                        bot.send_photo(chat_id, photo=filename, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                    else:
+                        bot.send_document(chat_id, document=filename, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                except Exception as file_id_err:
+                    # ករណីឆ្លងទម្រង់ File ID អត់ដើរ គឺឱ្យវារត់ទៅប្រើវិធីអានហ្វាយពី Local Folder ជំនួសវិញដើម្បីការពារសុវត្ថិភាព
+                    full_file_path = f"student_assignments/{filename}"
+                    if os.path.exists(full_file_path):
+                        with open(full_file_path, 'rb') as file_to_send:
+                            if 'photo' in f_type.lower() or filename.lower().endswith(('jpg', 'jpeg', 'png')):
+                                bot.send_photo(chat_id, photo=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                            else:
+                                bot.send_document(chat_id, document=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                    else:
+                        bot.send_message(chat_id, f"{info_text}\n⚠️ **មិនអាចទាញបង្ហាញឯកសារបានឡើយ!** ({file_id_err})", parse_mode='Markdown', reply_markup=markup)
+                        
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញទិន្នន័យកិច្ចការសិស្សបានទេ៖ `{e}`")
-
-
-
-
-    # ========================================================
+    
+     # ========================================================
     # 🎛️ មុខងារទី ៧៖ ស្ទាក់ចាប់ប៊ូតុង Inline "✍️ ដាក់ពិន្ទុឱ្យ..."
     # ========================================================
     @bot.callback_query_handler(func=lambda call: call.data.startswith('grh_'))
