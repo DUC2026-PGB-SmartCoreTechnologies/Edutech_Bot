@@ -81,7 +81,7 @@ def register_student_handlers(bot, supabase):
             bot.reply_to(message, f"❌ កំហុសបច្ចេកទេស៖ `{e}`")
     # 📝 មុខងារ៖ ស្ទាក់ចាប់ការចុចប៊ូតុង សុំច្បាប់
     # ========================================================
-    @bot.message_handler(func=lambda m: m.text in ["📝 Submit Leave Request (សុំច្បាប់)", "Submit Leave Request (សុំច្បាប់)"])
+    @bot.message_handler(func=lambda m: m.text in ["📝 Submit Leave Request", "Submit Leave Request"])
     def parent_leave_request_start(message):
         user_id = message.from_user.id
         user_res = supabase.table("users").select("*").eq("telegram_id", user_id).execute()
@@ -137,7 +137,7 @@ def register_student_handlers(bot, supabase):
             
             # 🔒 ----------------------------------------------------
             # 📚 មុខងារ៖ មើលកិច្ចការផ្ទះ (Homework)
-            if text in ["📚 Homework (កិច្ចការផ្ទះ)", "btn_hw", "Homework (កិច្ចការផ្ទះ)"]:
+            if text in ["📚 Homework", "btn_hw", "Homework"]:
                 stu_id = user.get('student_id') if user else None
                 
                 # 🟢 ករណីទី ១៖ សម្រាប់គណនី Admin ឬគណនីតេស្ត
@@ -285,7 +285,7 @@ def register_student_handlers(bot, supabase):
             # 🔒 ----------------------------------------------------
             # 📅 មុខងារ៖ មើលតារាងរៀន (Class Schedule)
             # ----------------------------------------------------
-            elif text in ["📅 Class Schedule (តារាងរៀន)", "btn_schedule"]:
+            elif text in ["📅 Class Schedule", "btn_schedule"]:
                 if user_role == 'ADMIN' and not user.get('student_id'):
                     bot.send_message(chat_id, "ℹ️ **[ Admin Test Mode ]**\nប៊ូតុងតារាងរៀនដំណើរការប្រក្រតីបាទ!")
                     return
@@ -317,7 +317,7 @@ def register_student_handlers(bot, supabase):
             # 🔒 ----------------------------------------------------
             # 📤 មុខងារ៖ បើក Mode ត្រៀមប្រគល់កិច្ចការផ្ទះ (Upload Homework Mode)
             # ----------------------------------------------------
-            elif text in ["📤 Upload Homework (ប្រគល់កិច្ចការ)", "Upload Homework (ប្រគល់កិច្ចការ)"]:
+            elif text in ["📤 Upload Homework", "Upload Homework"]:
                 if user_role == 'ADMIN' and not user.get('student_id'):
                     bot.send_message(chat_id, "ℹ️ **[ Admin Test Mode ]**\nប៊ូតុងប្រគល់កិច្ចការដំណើរការប្រក្រតីបាទ!")
                     return
@@ -500,7 +500,8 @@ def register_student_handlers(bot, supabase):
             # 🚪 ----------------------------------------------------
             # 🚀 មុខងារ LOGOUT (ចាកចេញពីប្រព័ន្ធ)
             # ----------------------------------------------------
-            if text in [helpers.get_string(lang, 'btn_logout'), "btn_logout", "Logout", "ចាកចេញពីប្រព័ន្ធ"]:
+            # if text in [helpers.get_string(lang, 'btn_logout'), "btn_logout", "Logout", "ចាកចេញពីប្រព័ន្ធ"]:
+            if text in ["🔙 Logout", "btn_logout", "Logout", "ចាកចេញពីប្រព័ន្ធ"]:
                 if user and user.get('student_id'):
                     # កែប្រែទិន្នន័យក្នុងតារាង users ឱ្យទៅជាទទេវិញ
                     supabase.table("users").update({
