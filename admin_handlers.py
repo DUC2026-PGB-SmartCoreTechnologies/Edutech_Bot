@@ -407,8 +407,9 @@ def register_admin_teacher_handlers(bot, supabase):
             bot.send_message(chat_id, f"🔍 កំពុងទាញយកទិន្នន័យវត្តមានថ្នាក់ *{class_target}*...", parse_mode='Markdown')
             
             # ✅ កែត្រង់នេះពី descending=True ទៅជា desc=True
-            att_res = supabase.table("attendance").select("*").eq("class_level", class_target).order("date", desc=True).execute()
-            
+            # att_res = supabase.table("attendance").select("*").eq("class_level", class_target).execute()
+            # 🟢 កូដថ្មីត្រូវដូរជា៖
+​           ​ att_res = supabase.table("attendance").select("*").eq("class_level", class_target).order("id", desc=True).execute()
             if not att_res.data:
                 bot.send_message(chat_id, f"❌ **មិនទាន់មានទិន្នន័យវត្តមាន** សម្រាប់ថ្នាក់ {class_target} ឡើយទេ។")
                 return
