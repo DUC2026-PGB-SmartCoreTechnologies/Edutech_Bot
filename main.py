@@ -216,6 +216,14 @@ threading.Thread(target=run_web_server, daemon=True).start()
 
 # ========================================================
 if __name__ == "__main__":
+    
+    try:
+        # 💡 បន្ថែមជួរនេះ ដើម្បីដោះសោរពី Telegram កុំឱ្យវាស្ទះជាមួយ Webhook ចាស់
+        bot.remove_webhook()
+        print("✅ [SUCCESS] Webhook removed successfully!")
+    except Exception as e:
+        print(f"⚠️ Warning during webhook removal: {e}")
+
     print("🎯 [SUCCESS] DUC System API Core Engine is live and Polling...")
    # 💡 បន្ថែម allowed_updates ដើម្បីបង្ខំឱ្យ Bot ចាប់យកទាំងអក្សរ រូបភាព និងឯកសារ PDF គ្រប់ពេល
     bot.infinity_polling(allowed_updates=['message', 'edited_message', 'callback_query'])
