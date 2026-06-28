@@ -387,13 +387,14 @@ def register_admin_teacher_handlers(bot, supabase):
             
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចរក្សាទុកកិច្ចការផ្ទះបានទេ៖ `{e}`")
- # ========================================================
-    # 📊 មុខងារទី ៥៖ /ld មើលវត្តមានសិស្សទាំងអស់ក្នុងថ្នាក់
+    # ========================================================
+    # 📊 មុខងារទី ៥៖ /ld មើលវត្តមានសិស្សទាំងអស់ក្នុងថ្នាក់ (FIXED SUPABASE ORDER)
     # ========================================================
     @bot.message_handler(commands=['ld'])
     def teacher_view_attendance_report(message):
         chat_id = message.chat.id
-        text = message.text.strip()
+        
+        text = message.text.strip() if message.text else ""
         parts = text.split(' ')
         
         if len(parts) < 2 or parts[1].strip() == "":
@@ -404,7 +405,9 @@ def register_admin_teacher_handlers(bot, supabase):
         
         try:
             bot.send_message(chat_id, f"🔍 កំពុងទាញយកទិន្នន័យវត្តមានថ្នាក់ *{class_target}*...", parse_mode='Markdown')
-            att_res = supabase.table("attendance").select("*").eq("class_level", class_target).order("date", descending=True).execute()
+            
+            # ✅ កែត្រង់នេះពី descending=True ទៅជា desc=True
+            att_res = supabase.table("attendance").select("*").eq("class_level", class_target).order("date", desc=True).execute()
             
             if not att_res.data:
                 bot.send_message(chat_id, f"❌ **មិនទាន់មានទិន្នន័យវត្តមាន** សម្រាប់ថ្នាក់ {class_target} ឡើយទេ។")
@@ -421,74 +424,78 @@ def register_admin_teacher_handlers(bot, supabase):
             
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញរបាយការណ៍បានទេ៖ `{e}`")
-        # 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្សមកមើល (FIXED: READ LOCAL FILE DIRECTLY)
-# ========================================================
+
+def register_admin_teacher_handlers(bot, supabase):
+
+    # ========================================================
+    # 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្សមកមើល (FIXED NameError)
+    # ========================================================
     @bot.message_handler(commands=['lh'])
     def teacher_view_submissions(message):
         chat_id = message.chat.id
-        text = message.text.strip()
+        
+        # ⚠️ ត្រូវប្រាកដថាមាន ២ បន្ទាត់នេះនៅខាងក្នុង Function នេះដាច់ខាត៖
+        text = message.text.strip() if message.text else ""
         parts = text.split(' ')
-    
-    if len(parts) < 2 or parts[1].strip() == "":
-        bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយ!** សូមវាយ៖ `/lh ឈ្មោះថ្នាក់`", parse_mode='Markdown')
-        return
         
-    class_target = parts[1].strip()
-    
-    try:
-        bot.send_message(chat_id, f"🔍 កំពុងស្វែងរកកិច្ចការផ្ទះរបស់ថ្នាក់ *{class_target}*...", parse_mode='Markdown')
-        
-        # 🎯 ឆែកទាញយកពីតារាង student_submissions យកស្ថានភាព 'SUBMITTED'
-        sub_res = supabase.table("student_submissions").select("*").eq("class_level", class_target).eq("status", "SUBMITTED").execute()
-        
-        if not sub_res.data:
-            bot.send_message(chat_id, f"✨ **មិនមានកិច្ចការដែលត្រូវដាក់ពិន្ទុទេ** សម្រាប់ថ្នាក់ {class_target}។")
+        if len(parts) < 2 or parts[1].strip() == "":
+            bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយ!** សូមវាយ៖ `/lh ឈ្មោះថ្នាក់`", parse_mode='Markdown')
             return
             
-        for sub in sub_res.data:
-            sub_id = sub['id']                
-            s_id = sub['student_id']     
-            filename = sub['submitted_file']  # ឈ្មោះ File ដែលទាញចេញពី Database (ឧទាហរណ៍៖ stu_DUC003_5970.jpg)
-            f_type = sub.get('submitted_type', 'document')     
+        class_target = parts[1].strip()
+        
+        try:
+            bot.send_message(chat_id, f"🔍 កំពុងស្វែងរកកិច្ចការផ្ទះរបស់ថ្នាក់ *{class_target}*...", parse_mode='Markdown')
             
-            # បង្កើត Inline Button សម្រាប់ចុចដាក់ពិន្ទុ
-            markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton(f"✍️ ដាក់ពិន្ទុឱ្យសិស្ស {s_id}", callback_data=f"grh_{sub_id}"))
+            # 🎯 ឆែកទាញយកពីតារាង student_submissions យកស្ថានភាព 'SUBMITTED'
+            sub_res = supabase.table("student_submissions").select("*").eq("class_level", class_target).eq("status", "SUBMITTED").execute()
             
-            info_text = f"👤 **កូដសិស្ស៖** `{s_id}`\n🏫 **ថ្នាក់៖** `{class_target}`\n📂 ឯកសារភ្ជាប់៖ `{f_type.upper()}`"
-            
-            # 📂 កំណត់ផ្លូវទៅកាន់ Folder ដែលផ្ទុកឯកសារនៅលើ Server
-            full_file_path = f"student_assignments/{filename}"
-            
-            # 📤 ចាប់ផ្ដើមអានឯកសារពី Local Folder ហើយផ្ញើទៅកាន់ Telegram
-            try:
-                if os.path.exists(full_file_path):
-                    with open(full_file_path, 'rb') as file_to_send:
-                        # ពិនិត្យមើលតាមប្រភេទឯកសារ បើជាប្រភេទរូបភាព បាញ់ជា Photo បើជាប្រភេទផ្សេង បាញ់ជា Document
-                        if 'photo' in f_type.lower() or filename.lower().endswith(('jpg', 'jpeg', 'png')):
-                            bot.send_photo(chat_id, photo=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
-                        else:
-                            bot.send_document(chat_id, document=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
-                else:
-                    # ករណីរកមិនឃើញឯកសារនៅក្នុង Folder 'student_assignments'
+            if not sub_res.data:
+                bot.send_message(chat_id, f"✨ **មិនមានកិច្ចការដែលត្រូវដាក់ពិន្ទុទេ** សម្រាប់ថ្នាក់ {class_target}។")
+                return
+                
+            for sub in sub_res.data:
+                sub_id = sub['id']                
+                s_id = sub['student_id']     
+                filename = sub['submitted_file']  
+                f_type = sub.get('submitted_type', 'document')     
+                
+                # បង្កើត Inline Button សម្រាប់ចុចដាក់ពិន្ទុ
+                markup = types.InlineKeyboardMarkup()
+                markup.add(types.InlineKeyboardButton(f"✍️ ដាក់ពិន្ទុឱ្យសិស្ស {s_id}", callback_data=f"grh_{sub_id}"))
+                
+                info_text = f"👤 **កូដសិស្ស៖** `{s_id}`\n🏫 **ថ្នាក់៖** `{class_target}`\n📂 ឯកសារភ្ជាប់៖ `{f_type.upper()}`"
+                
+                # 📂 កំណត់ផ្លូវទៅកាន់ Folder ដែលផ្ទុកឯកសារនៅលើ Server
+                full_file_path = f"student_assignments/{filename}"
+                
+                # 📤 ចាប់ផ្ដើមអានឯកសារពី Local Folder ហើយផ្ញើទៅកាន់ Telegram
+                try:
+                    if os.path.exists(full_file_path):
+                        with open(full_file_path, 'rb') as file_to_send:
+                            if 'photo' in f_type.lower() or filename.lower().endswith(('jpg', 'jpeg', 'png')):
+                                bot.send_photo(chat_id, photo=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                            else:
+                                bot.send_document(chat_id, document=file_to_send, caption=info_text, parse_mode='Markdown', reply_markup=markup)
+                    else:
+                        bot.send_message(
+                            chat_id, 
+                            f"{info_text}\n⚠️ **មិនអាចទាញបង្ហាញឯកសារបានឡើយ!** (រកមិនឃើញឯកសារ `{filename}` នៅក្នុងប្រព័ន្ធ Server)", 
+                            parse_mode='Markdown', 
+                            reply_markup=markup
+                        )
+                        
+                except Exception as file_err:
                     bot.send_message(
                         chat_id, 
-                        f"{info_text}\n⚠️ **មិនអាចទាញបង្ហាញឯកសារបានឡើយ!** (រកមិនឃើញឯកសារ `{filename}` នៅក្នុងប្រព័ន្ធ Server)", 
+                        f"{info_text}\n⚠️ **មានបញ្ហាក្នុងការផ្ញើឯកសារ៖** `{file_err}`", 
                         parse_mode='Markdown', 
                         reply_markup=markup
                     )
-                    
-            except Exception as file_err:
-                # ករណីមានបញ្ហាក្នុងពេលកំពុង Upload ផ្ញើទៅ Telegram
-                bot.send_message(
-                    chat_id, 
-                    f"{info_text}\n⚠️ **មានបញ្ហាក្នុងការផ្ញើឯកសារ៖** `{file_err}`", 
-                    parse_mode='Markdown', 
-                    reply_markup=markup
-                )
-                    
-    except Exception as e:
-        bot.reply_to(message, f"❌ មិនអាចទាញទិន្នន័យកិច្ចការសិស្សបានទេ៖ `{e}`")
+                        
+        except Exception as e:
+            bot.reply_to(message, f"❌ មិនអាចទាញទិន្នន័យកិច្ចការសិស្សបានទេ៖ `{e}`") 
+
 # ========================================================
     # 🎛️ មុខងារទី ៧៖ ស្ទាក់ចាប់ប៊ូតុង Inline "✍️ ដាក់ពិន្ទុឱ្យ..."
     # ========================================================
