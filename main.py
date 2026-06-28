@@ -203,22 +203,18 @@ student_handlers.register_student_handlers(bot, supabase)
 # # ==========================================
 
 
-# # from flask import Flask
-# # web_app = Flask('')
-# # @web_app.route('/')
-# # def home(): return "DUC API System Sprint 4 Baseline Live!"
+from flask import Flask
+web_app = Flask('')
+@web_app.route('/')
+def home(): return "DUC API System Sprint 4 Baseline Live!"
 
-# # def run_web_server():
-# #     bot_port = int(os.environ.get("PORT", 10000))
-# #     web_app.run(host='0.0.0.0', port=bot_port)
+def run_web_server():
+    bot_port = int(os.environ.get("PORT", 10000))
+    web_app.run(host='0.0.0.0', port=bot_port)
 
-# # threading.Thread(target=run_web_server, daemon=True).start()
+ threading.Thread(target=run_web_server, daemon=True).start()
 
-# if __name__ == "__main__":
-#     print("🎯 [SUCCESS] DUC System API Core Engine is live and Polling...")
-#     bot.infinity_polling()
-#     student_handlers.register_student_handlers(bot)
-# 🛰️ ៤. ដុតបញ្ឆេះប្រព័ន្ធមេ (Core Engine Polling)
+
 # ========================================================
 if __name__ == "__main__":
     print("🎯 [SUCCESS] DUC System API Core Engine is live and Polling...")
