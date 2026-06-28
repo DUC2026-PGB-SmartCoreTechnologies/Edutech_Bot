@@ -409,7 +409,7 @@ def register_admin_teacher_handlers(bot, supabase):
             # ✅ កែត្រង់នេះពី descending=True ទៅជា desc=True
             # att_res = supabase.table("attendance").select("*").eq("class_level", class_target).execute()
             # 🟢 កូដថ្មីត្រូវដូរជា៖
-​           ​ att_res = supabase.table("attendance").select("*").eq("class_level", class_target).order("id", desc=True).execute()
+            att_res = supabase.table("attendance").select("*").eq("class_level", class_target).order("id", desc=True).execute()
             if not att_res.data:
                 bot.send_message(chat_id, f"❌ **មិនទាន់មានទិន្នន័យវត្តមាន** សម្រាប់ថ្នាក់ {class_target} ឡើយទេ។")
                 return
@@ -425,7 +425,6 @@ def register_admin_teacher_handlers(bot, supabase):
             
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញរបាយការណ៍បានទេ៖ `{e}`")
-
 
 
     # ========================================================
