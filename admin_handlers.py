@@ -425,7 +425,7 @@ def register_admin_teacher_handlers(bot, supabase):
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញរបាយការណ៍បានទេ៖ `{e}`")
 
-def register_admin_teacher_handlers(bot, supabase):
+
 
     # ========================================================
     # 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្សមកមើល (FIXED NameError)
