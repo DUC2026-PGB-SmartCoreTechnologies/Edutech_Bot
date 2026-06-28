@@ -299,100 +299,7 @@ def register_admin_teacher_handlers(bot, supabase):
                 bot.send_message(chat_id, "👋 **ចាកចេញពីគណនីជោគជ័យ!** សូមវាយ `/start` ដើម្បីចូលគណនីផ្សេងទៀតបាទ។", reply_markup=remove_markup)
             except Exception as e:
                 bot.reply_to(message, f"❌ Logout ជួបបញ្ហា៖ `{e}`")
-
-
-    # ========================================================
-    # # 📚 មុខងារទី ៤៖ /addhw គ្រូដាក់កិច្ចការផ្ទះ (លុបចោលជួរ class_level ក្នុង homework ដាច់ខាត)
-    # # ========================================================
-    # @bot.message_handler(
-    #     content_types=['text', 'photo', 'document'],
-    #     func=lambda message: (message.text and message.text.strip().lower().startswith('/addhw')) or 
-    #                          (message.caption and message.caption.strip().lower().startswith('/addhw'))
-    # )
-    # def teacher_add_homework_fixed_final(message):
-    #     chat_id = message.chat.id
-    #     user_id = message.from_user.id
-    #     raw_text = message.text if message.text else message.caption
-        
-    #     if not raw_text: return
-            
-    #     text = raw_text.strip()[7:].strip()
-    #     if not text or len(text.split(',')) < 4:
-    #         bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយលោកគ្រូ!**\nសូមវាយ៖ `/addhw ថ្នាក់,មុខវិជ្ជា,ខ្លឹមសារ,ឆ្នាំ-ខែ-ថ្ងៃ ម៉ោង:នាទី`", parse_mode='Markdown')
-    #         return
-            
-    #     try:
-    #         parts = text.split(',')
-    #         class_input = parts[0].strip()       
-    #         subject_name = parts[1].strip()
-    #         description = parts[2].strip()
-    #         deadline_string = parts[3].strip() 
-            
-    #         try:
-    #             formatted_deadline = datetime.strptime(deadline_string, "%Y-%m-%d %H:%M").isoformat()
-    #         except ValueError:
-    #             bot.reply_to(message, "⚠️ **ទម្រង់ថ្ងៃខែខុសហើយ!** លំនាំ៖ `ឆ្នាំ-ខែ-ថ្ងៃ ម៉ោង:នាទី` (ឧទាហរណ៍៖ `2026-06-15 17:00`)")
-    #             return
-            
-    #         t_check = supabase.table("teachers").select("teacher_id").eq("telegram_id", user_id).execute()
-    #         t_id = t_check.data[0]['teacher_id'] if t_check.data else str(user_id)
-            
-    #         file_id_to_save = None
-    #         file_type_to_save = None
-            
-    #         if message.content_type == 'photo':
-    #             file_id_to_save = message.photo[-1].file_id
-    #             file_type_to_save = "photo"
-    #         elif message.content_type == 'document':
-    #             file_id_to_save = message.document.file_id
-    #             file_type_to_save = "document"
-                
-    #         # 📤 រក្សាទុកចូល homework (លុបចោលជួរ class_level ចេញស្អាតបាត ១០០%)
-    #         supabase.table("homework").insert({
-    #             "class_level": class_input,
-    #             "subject_name": subject_name,
-    #             "description": description,
-    #             "deadline_at": formatted_deadline, 
-    #             "teacher_id": t_id,
-    #             "attachment_file": file_id_to_save,   
-    #             "attachment_type": file_type_to_save
-    #             # ❌ លុប "class_level": class_input ចេញរួចរាល់ហើយបង ការពារទិន្នន័យឌុប
-    #         }).execute()
-            
-    #         # 🔍 [ប្រព័ន្ធការពារ Comment Hint]៖ ឆែកស្កែនរកឈ្មោះថ្នាក់ពីតារាងសិស្ស students ផ្ទាល់
-    #         student_check = supabase.table("students").select("class_level").eq("class_level", class_input).limit(1).execute()
-    #         display_date = datetime.strptime(deadline_string, "%Y-%m-%d %H:%M").strftime("%d-%b-%Y ម៉ោង %I:%M %p")
-            
-    #         success_msg = (
-    #             "🎯 **[ បង្ហោះកិច្ចការផ្ទះ + ឯកសារជោគជ័យ! ]**\n"
-    #             "--------------------------------------------------\n"
-    #             f"🏫 **សម្រាប់ថ្នាក់៖** `{class_input}`\n"
-    #             f"📚 **មុខវិជ្ជា៖** *{subject_name}*\n"
-    #             f"📝 **ខ្លឹមសារ៖** _{description}_\n"
-    #             f"⏳ **Deadline៖** `📅 {display_date}`\n"
-    #             "--------------------------------------------------\n"
-    #         )
-            
-    #         if student_check.data:
-    #             success_msg += "🟢 *ប្រព័ន្ធបានឆែកឃើញមានសិស្សក្នុងថ្នាក់នេះរួចរាល់ហើយ លោកគ្រូ!*"
-    #         else:
-    #             all_stud = supabase.table("students").select("class_level").execute()
-    #             class_list_str = "មិនទាន់មានថ្នាក់ចុះឈ្មោះ"
-    #             if all_stud.data:
-    #                 unique_classes = list(set([row.get('class_level') for row in all_stud.data if row.get('class_level')]))
-    #                 class_list_str = ", ".join([f"`{c}`" for c in unique_classes])
-                    
-    #             success_msg += (
-    #                 f"⚠️ **សូមលោកគ្រូជួយ Check Class ឡើងវិញ៖**\n"
-    #                 f"ព្រោះរកមិនឃើញសិស្សក្នុងថ្នាក់ `{class_input}` នេះដេកក្នុងតារាងសិស្សទេបាទ!\n"
-    #                 f"📋 **ឈ្មោះថ្នាក់ដែលមានសិស្សពិតប្រាកដគឺ៖** {class_list_str}"
-    #             )
-                
-    #         bot.send_message(chat_id, success_msg, parse_mode='Markdown')
-            
-    #     except Exception as e:
-    #         bot.reply_to(message, f"❌ មិនអាចរក្សាទុកកិច្ចការផ្ទះបានទេ៖ `{e}`")
-    #         return
+        return
 
 
 
@@ -402,7 +309,7 @@ def register_admin_teacher_handlers(bot, supabase):
     @bot.message_handler(
         content_types=['text', 'photo', 'document'],
         func=lambda message: (message.text and message.text.strip().lower().startswith('/addhw')) or 
-                             (message.caption and message.caption.strip().lower().startswith('/addhw'))
+                            (message.caption and message.caption.strip().lower().startswith('/addhw'))
     )
     def teacher_add_homework_fixed_final(message):
         chat_id = message.chat.id
@@ -480,14 +387,7 @@ def register_admin_teacher_handlers(bot, supabase):
             
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចរក្សាទុកកិច្ចការផ្ទះបានទេ៖ `{e}`")
-
-
-
-
-
-
-
-    # ========================================================
+ # ========================================================
     # 📊 មុខងារទី ៥៖ /ld មើលវត្តមានសិស្សទាំងអស់ក្នុងថ្នាក់
     # ========================================================
     @bot.message_handler(commands=['ld'])
@@ -521,14 +421,13 @@ def register_admin_teacher_handlers(bot, supabase):
             
         except Exception as e:
             bot.reply_to(message, f"❌ មិនអាចទាញរបាយការណ៍បានទេ៖ `{e}`")
-            # ========================================================
-# 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្សមកមើល (FIXED: READ LOCAL FILE DIRECTLY)
+        # 📝 មុខងារទី ៦៖ /lh ទាញយកកិច្ចការសិស្សមកមើល (FIXED: READ LOCAL FILE DIRECTLY)
 # ========================================================
-@bot.message_handler(commands=['lh'])
-def teacher_view_submissions(message):
-    chat_id = message.chat.id
-    text = message.text.strip()
-    parts = text.split(' ')
+    @bot.message_handler(commands=['lh'])
+    def teacher_view_submissions(message):
+        chat_id = message.chat.id
+        text = message.text.strip()
+        parts = text.split(' ')
     
     if len(parts) < 2 or parts[1].strip() == "":
         bot.reply_to(message, "⚠️ **ទម្រង់ខុសហើយ!** សូមវាយ៖ `/lh ឈ្មោះថ្នាក់`", parse_mode='Markdown')
@@ -590,10 +489,7 @@ def teacher_view_submissions(message):
                     
     except Exception as e:
         bot.reply_to(message, f"❌ មិនអាចទាញទិន្នន័យកិច្ចការសិស្សបានទេ៖ `{e}`")
-            
-          
-    
-     # ========================================================
+# ========================================================
     # 🎛️ មុខងារទី ៧៖ ស្ទាក់ចាប់ប៊ូតុង Inline "✍️ ដាក់ពិន្ទុឱ្យ..."
     # ========================================================
     @bot.callback_query_handler(func=lambda call: call.data.startswith('grh_'))
@@ -679,97 +575,7 @@ def teacher_view_submissions(message):
 
         except Exception as e:
             bot.send_message(chat_id, f"❌ Error: `{e}`")
-        # ========================================================
-    # # 🟢 មុខងារ៖ Admin វាយ /approve ដើម្បីបើកសិទ្ធិឱ្យសិស្ស និងបាញ់សារទៅសិស្សផ្ទាល់
-    # # ========================================================
-    # @bot.message_handler(commands=['approve'])
-    # def approve_user_command(message):
-    #     chat_id = message.chat.id
-    #     user_id = message.from_user.id
-        
-    #     try:
-    #         # 🔒 ជាន់ទី ១៖ ឆែកសិទ្ធិ Admin ក្នុងតារាង users
-    #         user_check = supabase.table("users").select("role").eq("telegram_id", user_id).execute()
-    #         if not user_check.data or user_check.data[0].get('role') != 'ADMIN':
-    #             bot.reply_to(message, "❌ **សកម្មភាពត្រូវបានបដិសេធ!** លោកអ្នកមិនមានសិទ្ធិឡើយ។")
-    #             return
 
-    #         # 🔄 ជំហានទី ២៖ កាត់យកអក្សរខាងក្រោយពាក្យ /approve រួចបំបែកដោយសញ្ញាក្បៀស (,)
-    #         input_text = message.text.strip()[8:].strip()
-            
-    #         if not input_text or "," not in input_text:
-    #             bot.reply_to(
-    #                 message, 
-    #                 "⚠️ **ទម្រង់ខុសហើយ Admin!**\n"
-    #                 "សូមវាយ៖ `/approve លេខTelegramID, លេខIDសិស្ស`\n"
-    #                 "💡 *ឧទាហរណ៍៖* `/approve 548962145, DUC001`", 
-    #                 parse_mode='Markdown'
-    #             )
-    #             return
-
-    #         parts = input_text.split(",")
-    #         target_tg_id = parts[0].strip()
-    #         new_student_id = parts[1].strip().upper() # លេខ ID ដែល Admin ដាក់ឱ្យ
-
-    #         bot.send_message(chat_id, f"⏳ **កំពុងអនុម័តគណនី Telegram ID: `{target_tg_id}`...**")
-
-    #         # 🔍 ៣. រត់ទៅឆែកមើលគណនីរបស់គាត់ក្នុងតារាង users ជាមុនសិន
-    #         target_user = supabase.table("users").select("*").eq("telegram_id", target_tg_id).execute()
-            
-    #         if not target_user.data:
-    #             bot.reply_to(message, f"❌ រកមិនឃើញគណនី Telegram ID: `{target_tg_id}` នេះនៅក្នុងតារាង users ឡើយបាទ។")
-    #             return
-                
-    #         # 🔄 ៤. អាប់ដេតស្ថានភាពក្នុងតារាង "users" ឱ្យទៅជា APPROVED ដើម្បីឱ្យគាត់ចូល Menu បាន
-    #         supabase.table("users").update({
-    #             "status": "APPROVED"
-    #         }).eq("telegram_id", target_tg_id).execute()
-
-    #         # 🎯 ៥. ទៅអាប់ដេតលេខ student_id ជូនគាត់នៅក្នុងតារាង "students" ឱ្យត្រូវគ្នាតាមដាតាបេស
-    #         try:
-    #             supabase.table("students").update({
-    #                 "student_id": new_student_id
-    #             }).eq("parent_telegram_id", target_tg_id).execute()
-    #             db_student_status = "✅ (បានរក្សាទុក ID ចូលតារាង students រួចរាល់)"
-    #         except Exception as e_db:
-    #             print(f"⚠️ Students table update student_id failed: {e_db}")
-    #             db_student_status = f"⚠️ (មិនអាចកែក្នុងតារាង students ទេ៖ {e_db})"
-
-    #         # 🔔 ៦. ដំណើរការបាញ់សារផ្ដាច់មុខទៅប្រាប់សិស្ស/អាណាព្យាបាលម្នាក់នោះផ្ទាល់ខ្លួន (Direct Message)
-    #         student_notified = "❌ (សិស្សចុច Block Bot ឬលុបឆាតចោល មិនអាចផ្ញើសារបានទេ)"
-    #         try:
-    #             alert_student = (
-    #                 "🎉 **សូមអបអរសាទរ! គណនីរបស់អ្នកត្រូវបានអនុម័តហើយ**\n"
-    #                 "--------------------------------------------------\n"
-    #                 f"👑 **លោកអ្នកទទួលបានលេខកូដសិស្សជាផ្លូវការ៖** `{new_student_id}`\n"
-    #                 "--------------------------------------------------\n"
-    #                 "🤖 ឥឡូវនេះ លោកអ្នកអាចវាយបញ្ជា `/start` សារជាថ្មី ដើម្បីចូលប្រើប្រាស់មឺនុយសាលាអនឡាញ DUC បានហើយបាទ! សូមអរគុណ។"
-    #             )
-    #             bot.send_message(target_tg_id, alert_student, parse_mode='Markdown')
-    #             student_notified = "✅ (បានផ្ញើសារជូនដំណឹងទៅសិស្សផ្ទាល់រួចរាល់)"
-    #         except Exception as e_msg:
-    #             print(f"⚠️ Cannot send message to student ID {target_tg_id}: {e_msg}")
-
-    #         # 📢 ៧. ផ្ញើសារលទ្ធផលរួមមកប្រាប់ Admin វិញ
-    #         bot.send_message(
-    #             chat_id, 
-    #             f"🟢 **អនុម័តគណនីជោគជ័យ!**\n\n"
-    #             f"🆔 **Telegram ID៖** `{target_tg_id}`\n"
-    #             f"👑 **ID សាលា៖** `{new_student_id}`\n"
-    #             f"📱 **ស្ថានភាព Users៖** `APPROVED` (ចូលប្រព័ន្ធបានហើយ)\n"
-    #             f"🗂️ **ស្ថានភាព Students៖** {db_student_status}\n"
-    #             f"🔔 **ការជូនដំណឹងសិស្ស៖** {student_notified}",
-    #             parse_mode='Markdown'
-    #         )
-
-    #     except Exception as e:
-    #         print(f"❌ Full Approve Error: {e}")
-    #         # 💡 ជួរដេកគន្លឹះ៖ ទោះបីជាកូដគាំង Error អ្វីក៏ដោយ គឺត្រូវតែបាញ់សារមកប្រាប់ Admin ភ្លាម លែងឱ្យស្ងាត់ទៀតហើយ
-    #         bot.send_message(chat_id, f"❌ **Bot គាំងមិនអាចអនុម័តបានទេ ដោយសារ Error៖** `{e}`", parse_mode='Markdown')
-            
-
-
-                    # 🟢 មុខងារ៖ Admin វាយ /approve ដើម្បីបើកសិទ្ធិឱ្យសិស្ស និងបាញ់សារទៅសិស្សផ្ទាល់
     # ========================================================
     @bot.message_handler(commands=['approve'])
     def approve_user_command(message):
