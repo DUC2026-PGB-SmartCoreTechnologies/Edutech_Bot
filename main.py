@@ -211,12 +211,12 @@ def home(): return "DUC API System Sprint 4 Baseline Live!"
 def run_web_server():
     bot_port = int(os.environ.get("PORT", 10000))
     web_app.run(host='0.0.0.0', port=bot_port)
-
- threading.Thread(target=run_web_server, daemon=True).start()
+threading.Thread(target=run_web_server, daemon=True).start()
 
 
 # ========================================================
 if __name__ == "__main__":
     print("🎯 [SUCCESS] DUC System API Core Engine is live and Polling...")
    # 💡 បន្ថែម allowed_updates ដើម្បីបង្ខំឱ្យ Bot ចាប់យកទាំងអក្សរ រូបភាព និងឯកសារ PDF គ្រប់ពេល
-bot.infinity_polling(allowed_updates=['message', 'edited_message', 'callback_query'])
+    bot.infinity_polling(allowed_updates=['message', 'edited_message', 'callback_query'])
+
